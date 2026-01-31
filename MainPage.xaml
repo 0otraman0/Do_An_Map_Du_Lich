@@ -43,6 +43,17 @@
                 <Button Text="Start GPS Tracking" Clicked="OnStartClicked" />
                 <Button Text="Stop GPS Tracking" Clicked="OnStopClicked" />
 
+                <Label x:Name="DistanceLabel" />
+                <Label x:Name="GeofenceLabel" Text="Outside geofence" />
+
+                <Label
+                x:Name="PoiStatusLabel"
+                Text="POI status: waiting..."
+                FontSize="18"
+                TextColor="Green" />
+
+
+
         </VerticalStackLayout>
     </ScrollView>
 
