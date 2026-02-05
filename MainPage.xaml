@@ -1,34 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MauiAppMain.MainPage">
+             xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             x:Class="MauiAppMain.MainPage"
+             Shell.NavBarIsVisible="false">
 
-    <ScrollView>
+    <Grid>
+        <maps:Map
+            x:Name="MyMap"
+            IsVisible="False"
+            IsShowingUser="True"
+            MapType="Street" />
+
         <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
-            <Label
-                Text="Hello, World!"
-                Style="{StaticResource Headline}"
-                SemanticProperties.HeadingLevel="Level1" />
-
-            <Label
-                Text="Welcome to &#10;.NET Multi-platform App UI"
-                Style="{StaticResource SubHeadline}"
-                SemanticProperties.HeadingLevel="Level2"
-                SemanticProperties.Description="Welcome to dot net Multi platform App U I" />
-
-            <Label Text="Latitude" />
-                <Label x:Name="LatitudeLabel" />
-
-                <Label Text="Longitude" />
-                <Label x:Name="LongitudeLabel" />
-
-                <Label Text="Speed (m/s)" />
-                <Label x:Name="SpeedLabel" />
-
-                <Button Text="Start GPS Tracking" Clicked="OnStartClicked" />
-                <Button Text="Stop GPS Tracking" Clicked="OnStopClicked" />
+                Padding="30,0"
+                Spacing="25">
 
                 <Label x:Name="DistanceLabel" />
                 <Label x:Name="GeofenceLabel" Text="Outside geofence" />
@@ -38,10 +24,7 @@
                 Text="POI status: waiting..."
                 FontSize="18"
                 TextColor="Green" />
-
-
-
-        </VerticalStackLayout>
-    </ScrollView>
+            </VerticalStackLayout>
+        </Grid>
 
 </ContentPage>

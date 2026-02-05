@@ -1,5 +1,6 @@
 ﻿using MauiAppMain.NewFolder1;
 using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Maps;
 
 namespace MauiAppMain
 {
@@ -47,6 +48,7 @@ namespace MauiAppMain
         public MainPage()
         {
             InitializeComponent();
+            StartTracking();
         }
 
         CancellationTokenSource? _cts;
@@ -63,8 +65,11 @@ namespace MauiAppMain
             return status == PermissionStatus.Granted;
         }
 
+        bool _mapInitialized = false;
+
         async void StartTracking()
         {
+            //kiểm tra quyền lấy vị trí 
             if (!await EnsureLocationPermissionAsync())
                 return;
 
@@ -84,12 +89,6 @@ namespace MauiAppMain
                         continue;
 
                     // ---- UI UPDATE ----
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        LatitudeLabel.Text = location.Latitude.ToString("0.000000");
-                        LongitudeLabel.Text = location.Longitude.ToString("0.000000");
-                        SpeedLabel.Text = location.Speed?.ToString("0.00") ?? "0";
-                    });
 
                     double nearestDistance = double.MaxValue;
                     string nearestPoi = "None";
@@ -123,9 +122,36 @@ namespace MauiAppMain
                                     $"You entered {poi.Name}");
                             });
 
-                            break; // remove this if you want multiple POIs in one tick
                         }
+                        else if(distance > poi.RadiusMeters + 5)
+                        {
+                            poi.IsTriggered = false;
+
+                            MainThread.BeginInvokeOnMainThread(() =>
+                            {
+                                PoiStatusLabel.Text = "Waiting....";
+                            });
+                        }
+
                     }
+                    //pin map tại vị trí của thiết bị
+                    if (!_mapInitialized)
+                    {
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            MyMap.MoveToRegion(
+                                MapSpan.FromCenterAndRadius(
+                                    new Location(location.Latitude, location.Longitude),
+                                    Distance.FromMeters(200)
+                                )
+                            );
+
+                            MyMap.IsVisible = true;
+                        });
+
+                        _mapInitialized = true;
+                    }
+
 
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
@@ -143,32 +169,6 @@ namespace MauiAppMain
         }
 
 
-
-        void StopTracking()
-        {
-            _cts?.Cancel();
-
-            // Reset GPS UI
-            LatitudeLabel.Text = "--";
-            LongitudeLabel.Text = "--";
-            SpeedLabel.Text = "--";
-
-            // Reset POI UI
-            PoiStatusLabel.Text = "POI status: --";
-            DistanceLabel.Text = "--";
-            // --CANCEL GPS OBJECT--
-        }
-
-         async void OnStartClicked(object sender, EventArgs e)
-            {
-            await EnsureNotificationPermissionAsync();
-            StartTracking();
-            }
-
-            void OnStopClicked(object sender, EventArgs e)
-            {
-                StopTracking();
-            }
         async Task EnsureNotificationPermissionAsync()
         {
 #if ANDROID
