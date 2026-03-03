@@ -13,10 +13,16 @@ namespace MauiAppMain
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                })
+                .ConfigureMauiHandlers(handlers =>
+                {
+                    #if ANDROID
+                    handlers.AddHandler<Microsoft.Maui.Controls.Maps.Map, CustomMapHandler>();
+                    #endif
                 });
 
 #if DEBUG
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
             return builder.Build();

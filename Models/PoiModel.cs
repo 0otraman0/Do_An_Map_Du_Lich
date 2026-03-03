@@ -4,15 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MauiAppMain.NewFolder1
+namespace MauiAppMain.Models
 {
-    class PointOfInterest
+    public class PointOfInterest
     {
-        public string Name { get; set; }
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public double RadiusMeters { get; set; }
-
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public double Latitude { get; set; } = 0;
+        public double Longitude { get; set; } = 0;
+        public double RadiusMeters { get; set; } = 0;
         public bool IsTriggered { get; set; } = false;
     }
 }

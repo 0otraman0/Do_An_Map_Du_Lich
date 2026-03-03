@@ -1,17 +1,23 @@
-﻿using MauiAppMain.NewFolder1;
+﻿using MauiAppMain.Models;
+using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Layouts;
 using Microsoft.Maui.Maps;
+
 
 namespace MauiAppMain
 {
     public partial class MainPage : ContentPage
     {
         // ===== POI CONFIG =====
+        // temporary hardcoded POIs, in real app this would come from a database or API
+
         List<PointOfInterest> _pois = new()
 {
     new PointOfInterest
     {
         Name = "School",
+        Description = "Trường học nơi tôi đã học",
         Latitude = 10.759893,
         Longitude = 106.679930,
         RadiusMeters = 10
@@ -19,6 +25,7 @@ namespace MauiAppMain
     new PointOfInterest
     {
         Name = "Coffee Shop",
+        Description = "Cửa hàng cà phê nơi tôi thường đến",
         Latitude = 10.759548,
         Longitude = 106.679105,
         RadiusMeters = 10
@@ -26,6 +33,7 @@ namespace MauiAppMain
     new PointOfInterest
     {
         Name = "Library",
+        Description = "Thư viện nơi tôi thường học bài",
         Latitude = 10.759328,
         Longitude = 106.678476,
         RadiusMeters = 10
@@ -48,10 +56,47 @@ namespace MauiAppMain
         public MainPage()
         {
             InitializeComponent();
+            BindingContext = this;
+            LoadPoisOnMap();
             StartTracking();
         }
 
+        bool _mapInitialized = false;
+
+        private PointOfInterest? _selectedPoi;
+
+        public PointOfInterest? SelectedPoi
+        {
+            get => _selectedPoi;
+            set
+            {
+                _selectedPoi = value;
+                OnPropertyChanged();
+            }
+        }
+        public bool _sheetVisible = false;
+        private double SheetHiddenY = 300;
+        private double SheetVisibleY = 0;
+
+        // Cancellation token để dừng tracking khi không cần thiết (ví dụ khi thoát app)
+
         CancellationTokenSource? _cts;
+
+        // Hàm đảm bảo quyền thông báo (chỉ cần thiết trên Android 13+)
+
+        async Task EnsureNotificationPermissionAsync()
+        {
+#if ANDROID
+            if (OperatingSystem.IsAndroidVersionAtLeast(33))
+            {
+                var status = await Permissions.CheckStatusAsync<Permissions.PostNotifications>();
+                if (status != PermissionStatus.Granted)
+                    await Permissions.RequestAsync<Permissions.PostNotifications>();
+            }
+#endif
+        }
+
+        // Hàm đảm bảo quyền lấy vị trí
 
         async Task<bool> EnsureLocationPermissionAsync()
         {
@@ -65,15 +110,25 @@ namespace MauiAppMain
             return status == PermissionStatus.Granted;
         }
 
-        bool _mapInitialized = false;
+        // Hàm dừng tracking khi không cần thiết (ví dụ khi thoát app)
+
+        void StopTracking()
+        {
+            _cts?.Cancel();
+        }
+
+        // Hàm bắt đầu tracking vị trí của thiết bị và kiểm tra khoảng cách đến các POI
 
         async void StartTracking()
         {
             //kiểm tra quyền lấy vị trí 
+
             if (!await EnsureLocationPermissionAsync())
                 return;
 
             _cts = new CancellationTokenSource();
+
+            //get position in background loop
 
             try
             {
@@ -88,7 +143,7 @@ namespace MauiAppMain
                     if (location == null)
                         continue;
 
-                    // ---- UI UPDATE ----
+                    // ---- kiểm tra khoảng cách tới các điểm poi {not in use right now since there is no live voice in yet} ----
 
                     double nearestDistance = double.MaxValue;
                     string nearestPoi = "None";
@@ -107,34 +162,10 @@ namespace MauiAppMain
                             nearestPoi = poi.Name;
                         }
 
-                        if (poi.IsTriggered)
-                            continue;
-
-                        if (distance <= poi.RadiusMeters)
-                        {
-                            poi.IsTriggered = true;
-
-                            MainThread.BeginInvokeOnMainThread(() =>
-                            {
-                                PoiStatusLabel.Text = $"Entered: {poi.Name}";
-                                ShowAndroidNotification(
-                                    "POI Reached",
-                                    $"You entered {poi.Name}");
-                            });
-
-                        }
-                        else if(distance > poi.RadiusMeters + 5)
-                        {
-                            poi.IsTriggered = false;
-
-                            MainThread.BeginInvokeOnMainThread(() =>
-                            {
-                                PoiStatusLabel.Text = "Waiting....";
-                            });
-                        }
-
                     }
-                    //pin map tại vị trí của thiết bị
+
+                    //pin map tại vị trí của thiết bị khi startTracking lần đầu
+
                     if (!_mapInitialized)
                     {
                         MainThread.BeginInvokeOnMainThread(() =>
@@ -153,12 +184,6 @@ namespace MauiAppMain
                     }
 
 
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        DistanceLabel.Text =
-                            $"Nearest POI: {nearestPoi} ({nearestDistance:0.0} m)";
-                    });
-
                     await Task.Delay(250);
                 }
             }
@@ -168,23 +193,11 @@ namespace MauiAppMain
             }
         }
 
-
-        async Task EnsureNotificationPermissionAsync()
-        {
-#if ANDROID
-    if (OperatingSystem.IsAndroidVersionAtLeast(33))
-    {
-        var status = await Permissions.CheckStatusAsync<Permissions.PostNotifications>();
-        if (status != PermissionStatus.Granted)
-            await Permissions.RequestAsync<Permissions.PostNotifications>();
-    }
-#endif
-        }
-
+        // Hàm hiển thị thông báo khi người dùng đến gần POI{not in use}
 
         void ShowAndroidNotification(string title, string message)
         {
-        #if ANDROID
+#if ANDROID
             var context = Android.App.Application.Context;
             const string channelId = "poi_channel";
 
@@ -210,8 +223,11 @@ namespace MauiAppMain
                 .Build();
 
             manager?.Notify(1001, notification);
-        #endif
+#endif
         }
+
+        // Hàm tính khoảng cách giữa 2 điểm dựa trên công thức Haversine
+
         double DistanceInMeters(double lat1, double lon1, double lat2, double lon2)
         {
             const double R = 6371000; // meters
@@ -228,7 +244,129 @@ namespace MauiAppMain
             return R * c;
         }
 
+        // Hàm chuyển đổi độ sang radians
+
         double DegreesToRadians(double deg) => deg * Math.PI / 180;
+
+        // Hàm load tất cả các điểm POI
+
+        void LoadPoisOnMap()
+        {
+            MyMap.Pins.Clear();
+            foreach (var poi in _pois)
+            {
+                var pin = new Pin
+                {
+                    Label = poi.Name,
+                    Address = poi.Description,
+                    Type = PinType.SearchResult, // or SavedPin, SearchResult, Generic
+                    Location = new Location(poi.Latitude, poi.Longitude),
+                };
+
+                pin.MarkerClicked += async (s, e) =>
+                {
+                    e.HideInfoWindow = false;
+
+                    //SelectedPoi = poi; -> this will update in ShowPoiWithTransition() func
+
+                    //await ShowBottomSheet();
+                    await ShowPoiWithTransition(poi);
+                };
+                MyMap.Pins.Add(pin);
+            }
+        }
+
+        // pop up sheet when click on to POI pin, in real app this would show more details about the POI and maybe some actions (like navigate, call, etc)
+
+        async Task ShowBottomSheet()
+        {
+            if (_sheetVisible) return;
+
+            _sheetVisible = true;
+            await PoiSheet.TranslateTo(0, SheetVisibleY, 300, Easing.CubicOut);
+
+        }
+
+        // pop down sheet when click outside of it, in real app this would be triggered when user clicks a close button or swipes down the sheet
+
+        async Task HideBottomSheet()
+        {
+            await PoiSheet.TranslateTo(0, SheetHiddenY, 300, Easing.CubicIn);
+            _sheetVisible = false;
+
+        }
+
+        double _startY;
+
+        // Hàm xử lý sự kiện pan trên bottom sheet để cho phép người dùng kéo sheet lên/xuống, nếu kéo xuống quá 50px thì sẽ tự động ẩn sheet đi
+
+        private async void OnSheetPanUpdated(object sender, PanUpdatedEventArgs e)
+        {
+            switch (e.StatusType)
+            {
+                case GestureStatus.Started:
+                    _startY = PoiSheet.TranslationY;
+                    break;
+
+                case GestureStatus.Running:
+
+                    double newY = _startY + e.TotalY;
+
+                    // Prevent dragging upward beyond visible position
+                    if (newY < SheetVisibleY)
+                        newY = SheetVisibleY;
+
+                    PoiSheet.TranslationY = newY;
+                    break;
+
+                case GestureStatus.Completed:
+
+                    // If dragged down more than 100px → hide
+                    if (PoiSheet.TranslationY > SheetVisibleY + 50)
+                    {
+                        await HideBottomSheet();
+                    }
+                    else
+                    {
+                        // Snap back to visible position
+                        await ShowBottomSheet();
+                    }
+
+                    break;
+            }
+        }
+
+        //transition for the bottom sheet
+
+        async Task ShowPoiWithTransition(PointOfInterest poi)
+        {
+            // Ensure sheet is visible FIRST
+            if (!_sheetVisible)
+            {
+                SelectedPoi = poi;
+                await ShowBottomSheet(); // open once
+                await Task.WhenAll(
+                PoiContent.FadeTo(1, 180, Easing.CubicOut),
+                PoiContent.TranslateTo(0, 0, 180, Easing.CubicOut)
+            );
+                return;
+            }
+
+            // Fade old content out
+            await PoiContent.FadeTo(0, 120);
+            PoiContent.TranslationY = 10;
+
+            // Update data AFTER fade-out
+            SelectedPoi = poi;
+
+            await Task.Delay(30); // prevents layout race
+
+            // Fade new content in
+            await Task.WhenAll(
+                PoiContent.FadeTo(1, 180, Easing.CubicOut),
+                PoiContent.TranslateTo(0, 0, 180, Easing.CubicOut)
+            );
+        }
 
     }
 }

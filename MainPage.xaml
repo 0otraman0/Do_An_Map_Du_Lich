@@ -6,25 +6,52 @@
              Shell.NavBarIsVisible="false">
 
     <Grid>
+        <!-- MAP VIEW -->
         <maps:Map
             x:Name="MyMap"
             IsVisible="False"
             IsShowingUser="True"
             MapType="Street" />
 
-        <VerticalStackLayout
-                Padding="30,0"
-                Spacing="25">
+        <!-- BOTTOM SHEET -->
+        <Grid
+            x:Name="PoiSheet"
+            BackgroundColor="White"
+            HeightRequest="300"
+            VerticalOptions="End"
+            TranslationY="300"
+            Padding="20">
+            <Grid.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnSheetPanUpdated"/>
+            </Grid.GestureRecognizers>
 
-                <Label x:Name="DistanceLabel" />
-                <Label x:Name="GeofenceLabel" Text="Outside geofence" />
+                <!-- 👇 ONLY CHANGE IS HERE -->
+                <VerticalStackLayout
+                x:Name="PoiContent"
+                Opacity="0"
+                TranslationY="10"
+                Spacing="10">
+                              
+
+                    <BoxView
+                    HeightRequest="5"
+                    WidthRequest="40"
+                    HorizontalOptions="Center"
+                    CornerRadius="3"
+                    Color="Gray" />
 
                 <Label
-                x:Name="PoiStatusLabel"
-                Text="POI status: waiting..."
-                FontSize="18"
-                TextColor="Green" />
-            </VerticalStackLayout>
-        </Grid>
+                    Text="{Binding SelectedPoi.Name}"
+                    FontSize="20"
+                    FontAttributes="Bold" />
 
+                <Label
+                    Text="{Binding SelectedPoi.Description}"
+                    FontSize="14" />
+
+            </VerticalStackLayout>
+
+        </Grid>
+        
+    </Grid>
 </ContentPage>
