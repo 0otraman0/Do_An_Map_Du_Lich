@@ -1,4 +1,5 @@
 <Solution>
+  <Folder Name="/Solution Items/" />
   <Project Path="MauiAppMain.csproj">
     <Deploy Solution="Debug|*" />
   </Project>

@@ -11,8 +11,70 @@
             x:Name="MyMap"
             IsVisible="False"
             IsShowingUser="True"
-            MapType="Street" />
+            MapType="Street"
+            IsZoomEnabled="True"/>
 
+        <!-- 🔵 TOP BAR OVERLAY -->
+        <Grid VerticalOptions="Start"
+      Padding="15,10"
+      InputTransparent="False">
+
+            <Frame
+        HeightRequest="56"
+        CornerRadius="28"
+        BackgroundColor="White"
+        HasShadow="True"
+        Padding="15,0">
+
+                <Grid ColumnDefinitions="Auto,*,Auto"
+              VerticalOptions="Center">
+
+                    <!-- ☰ Menu -->
+                    <ImageButton
+                Source="menu_2.svg"
+                BackgroundColor="Transparent"
+                WidthRequest="10"
+                HeightRequest="10"
+                VerticalOptions="Center"
+                HorizontalOptions="Start"
+                Clicked="OnMenuClicked"/>
+
+                    <!-- Title -->
+                    <Label
+                Grid.Column="1"
+                Text=""
+                FontSize="20"
+                FontAttributes="Bold"
+                TextColor="#222222"
+                VerticalOptions="Center"
+                HorizontalOptions="Center" />
+
+                    <!-- Real Search Input -->
+                    <Entry
+                Grid.Column="1"
+                Placeholder="Tìm kiếm quán ăn"
+                BackgroundColor="Transparent"
+                VerticalOptions="Center"
+                HorizontalOptions="End"
+                FontSize="20"
+                Margin="0,0,0,5"
+                ReturnType="Search"/>
+
+                    <!-- 🔍 Search -->
+                    <ImageButton
+                        Grid.Column="2"
+                Source="search_svg.png"
+                WidthRequest="12"
+                HeightRequest="12"
+                VerticalOptions="Center"
+                Margin="0,0,0,8"
+                Opacity="1"/>
+
+                </Grid>
+                
+            </Frame>
+
+        </Grid>
         <!-- BOTTOM SHEET -->
         <Grid
             x:Name="PoiSheet"
@@ -25,7 +87,6 @@
                 <PanGestureRecognizer PanUpdated="OnSheetPanUpdated"/>
             </Grid.GestureRecognizers>
 
-                <!-- 👇 ONLY CHANGE IS HERE -->
                 <VerticalStackLayout
                 x:Name="PoiContent"
                 Opacity="0"

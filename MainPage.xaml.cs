@@ -3,7 +3,7 @@ using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Layouts;
 using Microsoft.Maui.Maps;
-
+using Microsoft.Maui.Media;
 
 namespace MauiAppMain
 {
@@ -48,6 +48,7 @@ namespace MauiAppMain
     new PointOfInterest
     {
         Name = "Chuồng gà",
+        Description = "where I keep my chickens fat and thick until it grows big enough. That's when I cook them",
         Latitude = 10.758453,
         Longitude = 106.677928,
         RadiusMeters = 10
@@ -118,6 +119,7 @@ namespace MauiAppMain
         }
 
         // Hàm bắt đầu tracking vị trí của thiết bị và kiểm tra khoảng cách đến các POI
+        private PointOfInterest _lastSpokenPoi = null!;
 
         async void StartTracking()
         {
@@ -143,10 +145,11 @@ namespace MauiAppMain
                     if (location == null)
                         continue;
 
+
                     // ---- kiểm tra khoảng cách tới các điểm poi {not in use right now since there is no live voice in yet} ----
 
                     double nearestDistance = double.MaxValue;
-                    string nearestPoi = "None";
+                    PointOfInterest? nearestPoi = null;
 
                     foreach (var poi in _pois)
                     {
@@ -159,11 +162,22 @@ namespace MauiAppMain
                         if (distance < nearestDistance)
                         {
                             nearestDistance = distance;
-                            nearestPoi = poi.Name;
+                            nearestPoi = poi;
                         }
-
                     }
 
+                    Console.WriteLine(nearestPoi?.Name + " is " + nearestDistance + " meters away");
+
+                    // Trigger when within 5) meters
+                    if (nearestPoi != null && nearestDistance < 50)
+                        {
+                            if (_lastSpokenPoi != nearestPoi)
+                            {
+                                _lastSpokenPoi = nearestPoi;
+                                await SpeakPoiDescription(nearestPoi);
+                            }
+                        }
+                    
                     //pin map tại vị trí của thiết bị khi startTracking lần đầu
 
                     if (!_mapInitialized)
@@ -340,6 +354,7 @@ namespace MauiAppMain
 
         async Task ShowPoiWithTransition(PointOfInterest poi)
         {
+
             // Ensure sheet is visible FIRST
             if (!_sheetVisible)
             {
@@ -366,8 +381,28 @@ namespace MauiAppMain
                 PoiContent.FadeTo(1, 180, Easing.CubicOut),
                 PoiContent.TranslateTo(0, 0, 180, Easing.CubicOut)
             );
+
+            // audio play 
+            await SpeakPoiDescription(poi);
         }
 
+        // read and speak the description of the POI when click on it, in real app this would be triggered by walk though poi
+        public async Task SpeakPoiDescription(PointOfInterest poi)
+        {
+            if (string.IsNullOrWhiteSpace(poi.Description))
+                return;
+
+            #if ANDROID
+            AndroidTtsService.Speak(poi.Description);
+            #endif
+        }
+
+        // navigate to setting page
+
+        private async void OnMenuClicked(object sender, EventArgs e)
+        {
+            await Navigation.PushAsync(new SettingPage());
+        }
     }
 }
 

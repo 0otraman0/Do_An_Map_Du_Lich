@@ -11,7 +11,7 @@ public class CustomMapHandler : MapHandler
 {
     private Dictionary<Marker, Microsoft.Maui.Controls.Maps.Pin> _markerPinMap = new(); public Action<IMapPin>? OnPinTapped;
 
-    GoogleMap? _googleMap;
+    GoogleMap? _googleMap;  
 
     public static IPropertyMapper<Microsoft.Maui.Maps.IMap, MapHandler> CustomMapper =
         new PropertyMapper<Microsoft.Maui.Maps.IMap, MapHandler>(Mapper)
