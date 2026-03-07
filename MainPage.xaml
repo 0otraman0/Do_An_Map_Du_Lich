@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             x:Class="MauiAppMain.MainPage"
+             Shell.NavBarIsVisible="false">
+
+    <Grid>
+        <!-- MAP VIEW -->
+        <maps:Map
+            x:Name="MyMap"
+            IsShowingUser="True"
+            MapType="Street"
+            IsZoomEnabled="True"/>
+
+        <!-- 🔵 TOP BAR OVERLAY -->
+        <Grid VerticalOptions="Start"
+      Padding="15,10"
+      InputTransparent="False">
+
+            <Frame
+        HeightRequest="56"
+        CornerRadius="28"
+        BackgroundColor="White"
+        HasShadow="True"
+        Padding="15,0">
+
+                <Grid ColumnDefinitions="Auto,*,Auto"
+              VerticalOptions="Center">
+
+                    <!-- ☰ Menu -->
+                    <ImageButton
+                Source="menu_2.svg"
+                BackgroundColor="Transparent"
+                WidthRequest="10"
+                HeightRequest="10"
+                VerticalOptions="Center"
+                HorizontalOptions="Start"
+                Clicked="OnMenuClicked"/>
+
+                    <!-- Title -->
+                    <Label
+                Grid.Column="1"
+                Text=""
+                FontSize="20"
+                FontAttributes="Bold"
+                TextColor="#222222"
+                VerticalOptions="Center"
+                HorizontalOptions="Center" />
+
+                    <!-- Real Search Input -->
+                    <Entry
+                Grid.Column="1"
+                Placeholder="Tìm kiếm quán ăn"
+                BackgroundColor="Transparent"
+                VerticalOptions="Center"
+                HorizontalOptions="End"
+                FontSize="20"
+                Margin="0,0,0,5"
+                ReturnType="Search"/>
+
+                    <!-- 🔍 Search -->
+                    <ImageButton
+                        Grid.Column="2"
+                Source="search_svg.png"
+                WidthRequest="12"
+                HeightRequest="12"
+                VerticalOptions="Center"
+                Margin="0,0,0,8"
+                Opacity="1"/>
+
+                </Grid>
+
+            </Frame>
+
+        </Grid>
+        <!-- BOTTOM SHEET -->
+        <Grid
+    x:Name="PoiSheet"
+    BackgroundColor="White"
+    HeightRequest="500"  VerticalOptions="End"
+    TranslationY="500"  Padding="20,10,20,20">
+
+            <Grid.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnSheetPanUpdated"/>
+            </Grid.GestureRecognizers>
+
+            <ScrollView>
+                <VerticalStackLayout
+            x:Name="PoiContent"
+            Opacity="0"
+            TranslationY="10"
+            Spacing="10">
+
+                    <BoxView
+                HeightRequest="5"
+                WidthRequest="40"
+                HorizontalOptions="Center"
+                CornerRadius="3"
+                Color="Gray"
+                Margin="0,0,0,5" />
+
+                    <CarouselView ItemsSource="{Binding SelectedPoi.ImageList}"
+                          IndicatorView="indicatorView" 
+                          HeightRequest="200" 
+                          HorizontalOptions="FillAndExpand">
+                        <CarouselView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame CornerRadius="10" Padding="0" IsClippedToBounds="True" Margin="2">
+                                    <Image Source="{Binding}" 
+                                   Aspect="AspectFill"
+                                   HeightRequest="200" />
+                                </Frame>
+                            </DataTemplate>
+                        </CarouselView.ItemTemplate>
+                    </CarouselView>
+
+                    <IndicatorView x:Name="indicatorView"
+                           HorizontalOptions="Center"
+                           IndicatorColor="LightGray"
+                           SelectedIndicatorColor="DeepSkyBlue" />
+
+                    <Label
+                Text="{Binding SelectedPoi.Name}"
+                FontSize="22"
+                FontAttributes="Bold"
+                TextColor="Black" />
+
+                    <Label
+                Text="{Binding SelectedPoi.Description}"
+                FontSize="15"
+                TextColor="#444444" />
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+        <!-- SQLITE TEST -->
+        <!--<VerticalStackLayout
+        Padding="10"
+        VerticalOptions="Center"
+        HorizontalOptions="Start"
+        BackgroundColor="#AAFFFFFF">
+
+            <Label
+            x:Name="ResultLabel"
+            Text="SQLite Test"
+            FontSize="16"/>
+
+            <Button
+            Text="Test SQLite"
+            Clicked="TestSQLite_Clicked"/>
+
+        </VerticalStackLayout>-->
+    </Grid>
+</ContentPage>
