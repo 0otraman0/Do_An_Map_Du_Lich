@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using MauiAppMain.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Maps.Handlers;
 namespace MauiAppMain
 {
@@ -17,10 +18,10 @@ namespace MauiAppMain
                 })
                 .ConfigureMauiHandlers(handlers =>
                 {
-                    #if ANDROID
+#if ANDROID
                     handlers.AddHandler<Microsoft.Maui.Controls.Maps.Map, CustomMapHandler>();
-                    #endif
-                });
+#endif
+                }); 
                 MapHandler.Mapper.AppendToMapping("DisableMyLocationButton", (handler, view) =>
                 {
                 #if ANDROID
@@ -30,6 +31,8 @@ namespace MauiAppMain
                     }));
                 #endif
                 });
+            builder.Services.AddSingleton<DatabaseService>();
+            
 
 #if DEBUG
             builder.Logging.AddDebug();

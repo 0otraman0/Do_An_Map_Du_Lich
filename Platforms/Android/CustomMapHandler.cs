@@ -1,6 +1,7 @@
 ﻿using Android.Gms.Maps;
 using Android.Gms.Maps.Model;
 using Android.Graphics;
+using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using Microsoft.Maui.Maps.Handlers;
 using Paint = Android.Graphics.Paint;
@@ -59,21 +60,14 @@ public class CustomMapHandler : MapHandler
         if (handler is CustomMapHandler customHandler &&
             customHandler._googleMap != null)
         {
-            customHandler._markerPinMap.Clear();
             customHandler._googleMap.Clear();
 
-            var bitmap = BitmapFactory.DecodeResource(
-                Platform.AppContext.Resources,
-                Resource.Drawable.local_bar);
-
-            var scaledBitmap = Bitmap.CreateScaledBitmap(bitmap!, 120, 120, false);
+            Console.WriteLine($"Total pins: {map.Pins.Count}");
 
             foreach (var pin in map.Pins)
             {
-                var mauiPin = pin as Microsoft.Maui.Controls.Maps.Pin;
-                if (mauiPin == null)
+                if (pin is not Pin mauiPin)
                     continue;
-
 
                 var icon = CreateLabeledMarker(pin.Label);
 
@@ -83,7 +77,7 @@ public class CustomMapHandler : MapHandler
                         mauiPin.Location.Longitude))
                     .SetTitle(pin.Label)
                     .SetIcon(icon);
-                    
+
                 var marker = customHandler._googleMap.AddMarker(markerOptions);
 
                 if (marker != null)
@@ -91,7 +85,6 @@ public class CustomMapHandler : MapHandler
             }
         }
     }
-
     public static BitmapDescriptor CreateLabeledMarker(string text)
     {
         var paint = new Paint

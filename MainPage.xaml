@@ -9,7 +9,6 @@
         <!-- MAP VIEW -->
         <maps:Map
             x:Name="MyMap"
-            IsVisible="False"
             IsShowingUser="True"
             MapType="Street"
             IsZoomEnabled="True"/>
@@ -71,48 +70,85 @@
                 Opacity="1"/>
 
                 </Grid>
-                
+
             </Frame>
 
         </Grid>
         <!-- BOTTOM SHEET -->
         <Grid
-            x:Name="PoiSheet"
-            BackgroundColor="White"
-            HeightRequest="300"
-            VerticalOptions="End"
-            TranslationY="300"
-            Padding="20">
+    x:Name="PoiSheet"
+    BackgroundColor="White"
+    HeightRequest="500"  VerticalOptions="End"
+    TranslationY="500"  Padding="20,10,20,20">
+
             <Grid.GestureRecognizers>
                 <PanGestureRecognizer PanUpdated="OnSheetPanUpdated"/>
             </Grid.GestureRecognizers>
 
+            <ScrollView>
                 <VerticalStackLayout
-                x:Name="PoiContent"
-                Opacity="0"
-                TranslationY="10"
-                Spacing="10">
-                              
+            x:Name="PoiContent"
+            Opacity="0"
+            TranslationY="10"
+            Spacing="10">
 
                     <BoxView
-                    HeightRequest="5"
-                    WidthRequest="40"
-                    HorizontalOptions="Center"
-                    CornerRadius="3"
-                    Color="Gray" />
+                HeightRequest="5"
+                WidthRequest="40"
+                HorizontalOptions="Center"
+                CornerRadius="3"
+                Color="Gray"
+                Margin="0,0,0,5" />
 
-                <Label
-                    Text="{Binding SelectedPoi.Name}"
-                    FontSize="20"
-                    FontAttributes="Bold" />
+                    <CarouselView ItemsSource="{Binding SelectedPoi.ImageList}"
+                          IndicatorView="indicatorView" 
+                          HeightRequest="200" 
+                          HorizontalOptions="FillAndExpand">
+                        <CarouselView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame CornerRadius="10" Padding="0" IsClippedToBounds="True" Margin="2">
+                                    <Image Source="{Binding}" 
+                                   Aspect="AspectFill"
+                                   HeightRequest="200" />
+                                </Frame>
+                            </DataTemplate>
+                        </CarouselView.ItemTemplate>
+                    </CarouselView>
 
-                <Label
-                    Text="{Binding SelectedPoi.Description}"
-                    FontSize="14" />
+                    <IndicatorView x:Name="indicatorView"
+                           HorizontalOptions="Center"
+                           IndicatorColor="LightGray"
+                           SelectedIndicatorColor="DeepSkyBlue" />
 
-            </VerticalStackLayout>
+                    <Label
+                Text="{Binding SelectedPoi.Name}"
+                FontSize="22"
+                FontAttributes="Bold"
+                TextColor="Black" />
 
+                    <Label
+                Text="{Binding SelectedPoi.Description}"
+                FontSize="15"
+                TextColor="#444444" />
+                </VerticalStackLayout>
+            </ScrollView>
         </Grid>
-        
+        <!-- SQLITE TEST -->
+        <!--<VerticalStackLayout
+        Padding="10"
+        VerticalOptions="Center"
+        HorizontalOptions="Start"
+        BackgroundColor="#AAFFFFFF">
+
+            <Label
+            x:Name="ResultLabel"
+            Text="SQLite Test"
+            FontSize="16"/>
+
+            <Button
+            Text="Test SQLite"
+            Clicked="TestSQLite_Clicked"/>
+
+        </VerticalStackLayout>-->
     </Grid>
 </ContentPage>
