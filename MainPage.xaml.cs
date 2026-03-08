@@ -17,6 +17,8 @@ namespace MauiAppMain
         private PointOfInterest? _lastSpokenPoi;
         private CancellationTokenSource? _cts;
 
+        double _startY;
+
         public PointOfInterest? SelectedPoi
         {
             get => _selectedPoi;
@@ -191,31 +193,48 @@ namespace MauiAppMain
         }
 
         // --- BOTTOM SHEET ANIMATION ---
-        async Task ShowBottomSheet()
-        {
-            if (_sheetVisible) return;
-            _sheetVisible = true;
-            await PoiSheet.TranslateTo(0, SheetVisibleY, 300, Easing.CubicOut);
-        }
-
         async Task HideBottomSheet()
         {
-            await PoiSheet.TranslateTo(0, SheetHiddenY, 300, Easing.CubicIn);
+            PoiSheet.CancelAnimations();
             _sheetVisible = false;
+            // 150ms + Easing.Linear hoặc CubicIn sẽ làm bảng biến mất rất nhanh
+            await PoiSheet.TranslateTo(0, SheetHiddenY, 150, Easing.CubicIn);
+        }
+
+        async Task ShowBottomSheet()
+        {
+            _sheetVisible = true;
+            // Dùng SpringOut nếu muốn có độ nảy nhẹ, hoặc CubicOut để dừng lại mượt mà
+            await PoiSheet.TranslateTo(0, SheetVisibleY, 200, Easing.CubicOut);
         }
 
         private async void OnSheetPanUpdated(object sender, PanUpdatedEventArgs e)
         {
             switch (e.StatusType)
             {
+                case GestureStatus.Started:
+                    _startY = PoiSheet.TranslationY; // Chạm vào là ghi nhớ vị trí ngay
+                    break;
+
                 case GestureStatus.Running:
-                    double newY = Math.Max(SheetVisibleY, e.TotalY);
-                    PoiSheet.TranslationY = newY;
+                    // Bảng phải chạy theo tay ngay lập tức, không có độ trễ
+                    double targetY = _startY + e.TotalY;
+                    PoiSheet.TranslationY = Math.Clamp(targetY, SheetVisibleY, SheetHiddenY);
                     break;
+
                 case GestureStatus.Completed:
-                    if (PoiSheet.TranslationY > 100) await HideBottomSheet();
-                    else await ShowBottomSheet();
-                    break;
+                    // TỐI ƯU NHẠY: 
+                    // 1. Chỉ cần kéo xuống hơn 40-50px (thay vì 100px)
+                    // 2. HOẶC nếu người dùng quẹt tay xuống (TotalY > 0)
+                    if (e.TotalY > 40 || PoiSheet.TranslationY > SheetVisibleY + 40)
+                    {
+                        _ = HideBottomSheet();
+                    }
+                    else
+                    {
+                        _ = ShowBottomSheet();
+                    }
+                    break; ;
             }
         }
 
