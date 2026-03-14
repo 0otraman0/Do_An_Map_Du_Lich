@@ -1,16 +1,102 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MauiAppMain.SettingPage"
+             xmlns:resources="clr-namespace:MauiAppMain.Resources.Localization"
              NavigationPage.HasBackButton="True">
 
     <VerticalStackLayout Padding="30">
 
         <Label
-            Text="Settings"
+            Text="{x:Static resources:AppResource.Setting}" 
             FontSize="28"
             FontAttributes="None"
             HorizontalOptions="Center"/>
+        <VerticalStackLayout Padding="20" Spacing="10">
 
+    <!-- Language Selector -->
+    <Frame
+        Padding="15"
+        BorderColor="#ddd"
+        CornerRadius="12">
+
+                <Grid RowDefinitions="Auto,1,Auto">
+
+                    <!-- Current Language -->
+                    <Grid ColumnDefinitions="*,Auto">
+
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnLanguageButtonTapped"/>
+                        </Grid.GestureRecognizers>
+
+                        <Label
+            x:Name="SelectedLanguageLabel"
+            Text="Language"
+            FontSize="16"
+            VerticalOptions="Center"/>
+
+                        <Image
+            Grid.Column="1"
+            Source="arrow_down.png"
+            WidthRequest="18"
+            HeightRequest="18"/>
+
+                    </Grid>
+
+                    <!-- Divider -->
+                    <BoxView
+        Grid.Row="1"
+        HeightRequest="2"
+        BackgroundColor="DarkGray"
+        Margin="0,0,0,0"
+        Opacity="0"/>
+
+                    <!-- Animated Container -->
+                    <Grid
+        x:Name="LanguageContainer"
+        Grid.Row="2"
+        HeightRequest="0"
+        Margin="0,20,0,0"
+        IsClippedToBounds="True">
+
+                        <CollectionView
+            x:Name="LanguageList"
+            SelectionMode="Single"
+            SelectionChanged="OnLanguageSelected">
+
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+
+                                    <Grid Padding="0,10,0,0" ColumnDefinitions="*,Auto">
+
+                                        <Label
+                            Text="{Binding Language}"
+                            FontSize="15"
+                            VerticalOptions="Center"/>
+
+                                        <Image
+                            Grid.Column="1"
+                            Source="check.png"
+                            WidthRequest="18"
+                            HeightRequest="18"
+                            IsVisible="{Binding IsSelected}"/>
+
+                                    </Grid>
+
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+
+                        </CollectionView>
+
+                    </Grid>
+
+                </Grid>
+            </Frame>
+
+</VerticalStackLayout>
+        <Label
+         Text="sfdawd">
+            
+        </Label>
     </VerticalStackLayout>
 
 </ContentPage>

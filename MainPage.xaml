@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             xmlns:resources="clr-namespace:MauiAppMain.Resources.Localization"
              x:Class="MauiAppMain.MainPage"
              Shell.NavBarIsVisible="false">
 
@@ -13,62 +14,55 @@
             MapType="Street"
             IsZoomEnabled="True"/>
 
-        <!-- TOP BAR OVERLAY -->
+        <!-- TOP OVERLAY -->
         <Grid VerticalOptions="Start"
-            Padding="15,10"
-            InputTransparent="False"> 
+      Padding="15,10"
+      RowDefinitions="Auto,Auto">
 
+            <!-- SEARCH BAR -->
             <Frame
-                HeightRequest="56"
-                CornerRadius="28"
-                BackgroundColor="White"
-                HasShadow="True"
-                Padding="15,0">
-
+        Grid.Row="0"
+        HeightRequest="56"
+        CornerRadius="28"
+        BackgroundColor="White"
+        HasShadow="True"
+        Padding="15,0">
                 <Grid ColumnDefinitions="Auto,*,Auto"
-                    VerticalOptions="Center">
+              VerticalOptions="Center">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSearchTapped"/>
+                    </Grid.GestureRecognizers>
 
-                    <!-- ☰ Menu -->
+                    <!-- Menu -->
                     <ImageButton
-                        Source="menu_2.svg"
-                        BackgroundColor="Transparent"
-                        WidthRequest="10"
-                        HeightRequest="10"
-                        VerticalOptions="Center"
-                        HorizontalOptions="Start"
-                        Clicked="OnMenuClicked"/>
+                Source="menu_2.svg"
+                BackgroundColor="Transparent"
+                WidthRequest="20"
+                HeightRequest="20"
+                VerticalOptions="Center"
+                Clicked="OnMenuClicked"/>
 
-                    <!-- Title -->
-                    <Label
-                        Grid.Column="1"
-                        Text=""
-                        FontSize="20"
-                        FontAttributes="Bold"
-                        TextColor="#222222"
-                        VerticalOptions="Center"
-                        HorizontalOptions="Center" />
-
-                    <!-- Real Search Input -->
-                    <Entry
-                        Grid.Column="1"
-                        Placeholder="Tìm kiếm quán ăn"
-                        BackgroundColor="Transparent"
-                        VerticalOptions="Center"
-                        HorizontalOptions="End"
-                        FontSize="20"
-                        Margin="0,0,0,5"
-                        ReturnType="Search"/>   
-
-                    <!-- 🔍 Search -->
+                    <!-- Search -->
+                    <Grid             Grid.Column="1"
+>
+                        
+                        <Label
+            Text="{Static resources:AppResource.Search_placeholder}"
+            x:Name="SearchEntry"
+            TextColor="#999999"
+            FontSize="20"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            InputTransparent="True"
+            Margin="0,0,0,0"/>
+                    </Grid>
+                    <!--TextChanged="OnSearchTextChanged"-->
+                    <!-- Search Icon -->
                     <ImageButton
-                        Grid.Column="2"
-                        Source="search_svg.png"
-                        WidthRequest="12"
-                        HeightRequest="12"
-                        VerticalOptions="Center"
-                        Margin="0,0,0,8"
-                        Opacity="1"/>   
-
+                Grid.Column="2"
+                Source="search_svg.png"
+                WidthRequest="18"
+                HeightRequest="18"/>
                 </Grid>
 
             </Frame>

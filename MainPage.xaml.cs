@@ -2,12 +2,15 @@
 using MauiAppMain.Services;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
+using System.Globalization;
+using MauiAppMain.Resources.Localization;
 
 namespace MauiAppMain
 {
     public partial class MainPage : ContentPage
     {
         private readonly DatabaseService _database;
+        private readonly LanguageService _languageService;
         private List<PointOfInterest> _pois = new();
         private bool _mapInitialized = false;
         private bool _sheetVisible = false;
@@ -34,11 +37,12 @@ namespace MauiAppMain
             InitializeComponent();
             _database = database;
             BindingContext = this;
+            LanguageService.LoadSavedLanguage(); // Mặc định là tiếng Việt, bạn có thể thay đổi theo ý muốn
         }
-
         protected override async void OnAppearing()
         {
             base.OnAppearing();
+            SearchEntry.Text = AppResource.Search_placeholder;
             try
             {
                 await SeedData();
@@ -226,7 +230,7 @@ namespace MauiAppMain
                     // TỐI ƯU NHẠY: 
                     // 1. Chỉ cần kéo xuống hơn 40-50px (thay vì 100px)
                     // 2. HOẶC nếu người dùng quẹt tay xuống (TotalY > 0)
-                    if (e.TotalY > 40 || PoiSheet.TranslationY > SheetVisibleY + 40)
+                    if (e.TotalY > 40 || PoiSheet.TranslationY > SheetVisibleY + 100)
                     {
                         _ = HideBottomSheet();
                     }
@@ -241,34 +245,74 @@ namespace MauiAppMain
         //lưu dữ liệu pin trên bản đồ
         async Task SeedData()
         {
+            // kiểm tra dữ liệu POI đã tồn tại chưa, nếu chưa thì thêm vào
             await _database.Init();
             var existing = await _database.GetPOIsAsync();
-            if (existing.Count > 0) return;
-
-            var imageList1 = new List<string> { "school_1.jpg", "school_2.jpg", "school_3.jpg" };
-            var imageList2 = new List<string> { "cafe_1.jpg", "cafe_2.jpg" };
-
-            var initialPois = new List<PointOfInterest>
-    {
-        new PointOfInterest
-        {
-            Name = "Trường học",
-            Description = "Trường học là nơi tôi được học.",
-            Latitude = 10.759893,
-            Longitude = 106.679930,
-            ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList1)
-        },
-            new PointOfInterest
+            if (existing.Count == 0)
             {
-            Name = "Quán Cà Phê",
-            Description = "Cà phê ngon nhất ở đây.",
-            Latitude = 10.759548,
-            Longitude = 106.679105,
-            ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList2)
-            }
-        };
+                var imageList1 = new List<string> { "school_1.jpg", "school_2.jpg", "school_3.jpg" };
+                var imageList2 = new List<string> { "cafe_1.jpg", "cafe_2.jpg" };
 
-            foreach (var poi in initialPois) await _database.AddPOIAsync(poi);
+                var initialPois = new List<PointOfInterest>
+                {
+                new PointOfInterest
+                {
+                    Name = "Trường học",
+                    Description = "Trường học là nơi tôi được học.",
+                    Latitude = 10.759893,
+                    Longitude = 106.679930,
+                    ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList1)
+                },
+                    new PointOfInterest
+                    {
+                    Name = "Quán Cà Phê",
+                    Description = "Cà phê ngon nhất ở đây.",
+                    Latitude = 10.759548,
+                    Longitude = 106.679105,
+                    ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList2)
+                    }
+                };
+                foreach (var poi in initialPois) await _database.AddPOIAsync(poi);
+            }
+            // kiểm tra dữ liệu ngôn ngữ đã tồn tại chưa, nếu chưa thì thêm vào
+            var existing_lang = await _database.GetLanguagesAsync();
+            if (existing_lang.Count == 0)
+            {
+                var initialLanguage = new List<Language_option>
+                {
+                    new Language_option
+                    {
+                        Code = "en",
+                        Language = "English"
+                    },
+                    new Language_option
+                    {
+                        Code = "vi",
+                        Language = "Tiếng Việt"
+                    },
+                    new Language_option
+                    {
+                        Code = "ja",
+                        Language = "日本語"
+                    }
+                };
+                foreach (var lang in initialLanguage) await _database.AddLanguageAsync(lang);
+            }
         }
+        private async void OnSearchTapped(object sender, EventArgs e)
+        {
+            Console.WriteLine("asdsdfSDFASDFSF_________+======");
+            try
+            {
+                // Chắc chắn rằng bạn đã tạo file SettingPage.xaml
+                await Navigation.PushAsync(new SearchPage());
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Lỗi", "Không thể mở trang cài đặt. Hãy đảm bảo SearchPage đã tồn tại.", "OK");
+                Console.WriteLine(ex.Message);
+            }
+        }
+        
     }
 }
