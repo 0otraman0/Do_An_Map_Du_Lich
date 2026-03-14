@@ -18,6 +18,7 @@ namespace MauiAppMain.Services
 
             await _database.CreateTableAsync<PointOfInterest>();
             await _database.CreateTableAsync<POIImage>();
+            await _database.CreateTableAsync<Language_option>();
         }
             
         public async Task<List<PointOfInterest>> GetPOIsAsync()
@@ -37,6 +38,32 @@ namespace MauiAppMain.Services
         {
             await Init();
             await _database.InsertAsync(image);
+        }
+        //ham them language 
+        public async Task AddLanguageAsync(Language_option language)
+        {
+            await Init();
+            await _database.InsertAsync(language);
+        }
+        // Ham lấy tất cả ngôn ngữ
+        public async Task<List<Language_option>> GetLanguagesAsync()
+        {
+            await Init();
+            return await _database.Table<Language_option>().ToListAsync();
+        }
+        public async Task<List<PointOfInterest>> SearchPoiAsync(string keyword)
+        {
+            keyword = keyword.ToLower();
+
+            return await _database.Table<PointOfInterest>()
+                .Where(p => p.Name.ToLower().Contains(keyword) || p.Description.ToLower().Contains(keyword))
+                // limit suggestions use .take(5) if you want to limit the number of suggestions
+                .ToListAsync();
+        }
+        public async Task UpdateLanguageAsync(Language_option language)
+        {
+            await Init();
+            await _database.UpdateAsync(language);
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using MauiAppMain.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Maps.Handlers;
+using System.Globalization;
+using MauiAppMain.Resources.Localization;
 namespace MauiAppMain
 {
     public static class MauiProgram
