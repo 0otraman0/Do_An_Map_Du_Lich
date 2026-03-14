@@ -13,61 +13,61 @@
             MapType="Street"
             IsZoomEnabled="True"/>
 
-        <!-- 🔵 TOP BAR OVERLAY -->
+        <!-- TOP BAR OVERLAY -->
         <Grid VerticalOptions="Start"
-      Padding="15,10"
-      InputTransparent="False">
+            Padding="15,10"
+            InputTransparent="False"> 
 
             <Frame
-        HeightRequest="56"
-        CornerRadius="28"
-        BackgroundColor="White"
-        HasShadow="True"
-        Padding="15,0">
+                HeightRequest="56"
+                CornerRadius="28"
+                BackgroundColor="White"
+                HasShadow="True"
+                Padding="15,0">
 
                 <Grid ColumnDefinitions="Auto,*,Auto"
-              VerticalOptions="Center">
+                    VerticalOptions="Center">
 
                     <!-- ☰ Menu -->
                     <ImageButton
-                Source="menu_2.svg"
-                BackgroundColor="Transparent"
-                WidthRequest="10"
-                HeightRequest="10"
-                VerticalOptions="Center"
-                HorizontalOptions="Start"
-                Clicked="OnMenuClicked"/>
+                        Source="menu_2.svg"
+                        BackgroundColor="Transparent"
+                        WidthRequest="10"
+                        HeightRequest="10"
+                        VerticalOptions="Center"
+                        HorizontalOptions="Start"
+                        Clicked="OnMenuClicked"/>
 
                     <!-- Title -->
                     <Label
-                Grid.Column="1"
-                Text=""
-                FontSize="20"
-                FontAttributes="Bold"
-                TextColor="#222222"
-                VerticalOptions="Center"
-                HorizontalOptions="Center" />
+                        Grid.Column="1"
+                        Text=""
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#222222"
+                        VerticalOptions="Center"
+                        HorizontalOptions="Center" />
 
                     <!-- Real Search Input -->
                     <Entry
-                Grid.Column="1"
-                Placeholder="Tìm kiếm quán ăn"
-                BackgroundColor="Transparent"
-                VerticalOptions="Center"
-                HorizontalOptions="End"
-                FontSize="20"
-                Margin="0,0,0,5"
-                ReturnType="Search"/>
+                        Grid.Column="1"
+                        Placeholder="Tìm kiếm quán ăn"
+                        BackgroundColor="Transparent"
+                        VerticalOptions="Center"
+                        HorizontalOptions="End"
+                        FontSize="20"
+                        Margin="0,0,0,5"
+                        ReturnType="Search"/>   
 
                     <!-- 🔍 Search -->
                     <ImageButton
                         Grid.Column="2"
-                Source="search_svg.png"
-                WidthRequest="12"
-                HeightRequest="12"
-                VerticalOptions="Center"
-                Margin="0,0,0,8"
-                Opacity="1"/>
+                        Source="search_svg.png"
+                        WidthRequest="12"
+                        HeightRequest="12"
+                        VerticalOptions="Center"
+                        Margin="0,0,0,8"
+                        Opacity="1"/>   
 
                 </Grid>
 
@@ -76,79 +76,141 @@
         </Grid>
         <!-- BOTTOM SHEET -->
         <Grid
-    x:Name="PoiSheet"
-    BackgroundColor="White"
-    HeightRequest="500"  VerticalOptions="End"
-    TranslationY="500"  Padding="20,10,20,20">
+            x:Name="PoiSheet"
+            BackgroundColor="White"
+            HeightRequest="500"
+            VerticalOptions="End"
+            TranslationY="500"
+            Padding="20,10,20,20">
 
             <Grid.GestureRecognizers>
                 <PanGestureRecognizer PanUpdated="OnSheetPanUpdated"/>
             </Grid.GestureRecognizers>
 
-            <ScrollView>
-                <VerticalStackLayout
-            x:Name="PoiContent"
-            Opacity="0"
-            TranslationY="10"
-            Spacing="10">
+            <Grid RowDefinitions="Auto,*"
+                x:Name="PoiContent"
+                Opacity="0"
+                TranslationY="10"
+                >
+                <!-- Drag Handle -->
+                <BoxView
+                    HeightRequest="5"
+                    WidthRequest="40"
+                    HorizontalOptions="Center"
+                    CornerRadius="3"
+                    Color="Gray"
+                    Margin="0,0,0,50"/>
+                <ScrollView Grid.Row="1"
+                            VerticalScrollBarVisibility="Never">
 
-                    <BoxView
-                HeightRequest="5"
-                WidthRequest="40"
-                HorizontalOptions="Center"
-                CornerRadius="3"
-                Color="Gray"
-                Margin="0,0,0,5" />
+                    <VerticalStackLayout Spacing="10">
+                        <!-- POI NAME -->
+                        <Label
+                    Text="{Binding SelectedPoi.Name}"
+                    FontSize="24"
+                    FontAttributes="Bold"
+                    TextColor="Black"/>
 
-                    <CarouselView ItemsSource="{Binding SelectedPoi.ImageList}"
-                          IndicatorView="indicatorView" 
-                          HeightRequest="200" 
-                          HorizontalOptions="FillAndExpand">
-                        <CarouselView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame CornerRadius="10" Padding="0" IsClippedToBounds="True" Margin="2">
-                                    <Image Source="{Binding}" 
-                                   Aspect="AspectFill"
-                                   HeightRequest="200" />
-                                </Frame>
-                            </DataTemplate>
-                        </CarouselView.ItemTemplate>
-                    </CarouselView>
+                        <!-- ADDRESS -->
+                        <Label
+                    Text="{Binding SelectedPoi.Address}"
+                    FontSize="14"
+                    TextColor="#666666"/>
 
-                    <IndicatorView x:Name="indicatorView"
-                           HorizontalOptions="Center"
-                           IndicatorColor="LightGray"
-                           SelectedIndicatorColor="DeepSkyBlue" />
+                        <!-- IMAGE CAROUSEL -->
+                        <!-- GOOGLE STYLE IMAGE CAROUSEL -->
+                        <Grid HeightRequest="220">
 
-                    <Label
-                Text="{Binding SelectedPoi.Name}"
-                FontSize="22"
-                FontAttributes="Bold"
-                TextColor="Black" />
+                            <CarouselView
+                                x:Name="PoiCarousel"
+                                ItemsSource="{Binding SelectedPoi.ImageList}"
+                                IndicatorView="indicatorView"
+                                PeekAreaInsets="40"
+                                Loop="False"
+                                HeightRequest="220"
+                                HorizontalScrollBarVisibility="Never">
 
-                    <Label
+                                <CarouselView.ItemTemplate>
+                                    <DataTemplate>
+
+                                        <Border
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 16"
+                                            Margin="2">
+
+                                            <Image
+                                                Source="{Binding}"
+                                                Aspect="AspectFill"/>
+                                        </Border>
+
+                                    </DataTemplate>
+                                </CarouselView.ItemTemplate>
+
+                            </CarouselView>
+
+                            <!-- DOT INDICATORS (overlay on image) -->
+                            <IndicatorView
+                                x:Name="indicatorView"
+                                HorizontalOptions="Center"
+                                VerticalOptions="End"
+                                Margin="0,0,0,10"
+                                IndicatorColor="#CCCCCC"
+                                SelectedIndicatorColor="White"/>        
+
+                        </Grid>
+
+                        <!-- OPENING TIME -->
+                        <Border
+    BackgroundColor="#F4F4F4"
+    StrokeShape="RoundRectangle 10"
+    Padding="10">
+
+                            <Label
+        Text="{Binding SelectedPoi.OpeningTime}"
+        FontSize="14"
+        FontAttributes="Bold"
+        TextColor="#333333"/>
+
+                        </Border>
+
+                        <!-- DESCRIPTION -->
+                        <Label
+    Text="{Binding SelectedPoi.Description}"
+    FontSize="15"
+    TextColor="#444444"/>
+
+                        <!-- OPENING TIME -->
+                        <Border
+                BackgroundColor="#F4F4F4"
+                StrokeShape="RoundRectangle 10"
+                Padding="10">
+
+                            <Label
+                    Text="{Binding SelectedPoi.OpeningTime}"
+                    FontSize="14"
+                    FontAttributes="Bold"
+                    TextColor="#333333"/>
+
+                        </Border>
+
+                        <!-- DESCRIPTION -->
+                        <Label
                 Text="{Binding SelectedPoi.Description}"
                 FontSize="15"
-                TextColor="#444444" />
-                </VerticalStackLayout>
-            </ScrollView>
+                TextColor="#444444"/>
+                        <!-- DESCRIPTION -->
+                        <Label
+                Text="{Binding SelectedPoi.Descriptiona}"
+                FontSize="15"
+                TextColor="#444444"/>
+                        <!-- DESCRIPTION -->
+                        <Label
+                Text="{Binding SelectedPoi.Dsescription}"
+                FontSize="15"
+                TextColor="#000000"/>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Grid>
         </Grid>
-        <!-- SQLITE TEST -->
-        <!--<VerticalStackLayout
-        Padding="10"
-        VerticalOptions="Center"
-        HorizontalOptions="Start"
-        BackgroundColor="#AAFFFFFF">
-
-            <Label
-            x:Name="ResultLabel"
-            Text="SQLite Test"
-            FontSize="16"/>
-
-            <Button
-            Text="Test SQLite"
-            Clicked="TestSQLite_Clicked"/>
-
-        </VerticalStackLayout>-->
     </Grid>
 </ContentPage>
