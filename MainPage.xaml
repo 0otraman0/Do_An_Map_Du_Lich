@@ -1,4 +1,5 @@
-﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
              x:Class="MauiAppMain.MainPage"
@@ -9,7 +10,6 @@
         <maps:Map
             x:Name="MyMap"
             IsShowingUser="True"
-            MapClicked="OnMapClicked"
             MapType="Street"
             IsZoomEnabled="True"/>
 
@@ -74,219 +74,81 @@
             </Frame>
 
         </Grid>
-
-        <!--Tab Bar-->
-        <Border
-        x:Name="MainTabBar"
-        VerticalOptions="End"
-        HeightRequest="75"
-        BackgroundColor="White"
-        StrokeThickness="0">
-
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="10,10,0,0" />
-            </Border.StrokeShape>
-
-            <Grid ColumnDefinitions="*, *">
-                <VerticalStackLayout Grid.Column="0" Spacing="5" VerticalOptions="Center">
-                    <Image Source="heart_icon.png" WidthRequest="24" HeightRequest="24" />
-                    <Label Text="Yêu thích" HorizontalOptions="Center" FontSize="12" TextColor="#5F6368" />
-                    <VerticalStackLayout.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnFavoriteTabClicked" />
-                    </VerticalStackLayout.GestureRecognizers>
-                </VerticalStackLayout>
-
-                <VerticalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center">
-                    <Image Source="list_icon.png" WidthRequest="24" HeightRequest="24" />
-                    <Label Text="Tất cả POI" HorizontalOptions="Center" FontSize="12" TextColor="#5F6368" />
-                    <VerticalStackLayout.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnAllPoiTabClicked" />
-                    </VerticalStackLayout.GestureRecognizers>
-                </VerticalStackLayout>
-            </Grid>
-        </Border>
-        
         <!-- BOTTOM SHEET -->
         <Grid
     x:Name="PoiSheet"
     BackgroundColor="White"
-    VerticalOptions="End"
-    Padding="20,10,20,20">
-
-
+    HeightRequest="500"  VerticalOptions="End"
+    TranslationY="500"  Padding="20,10,20,20">
 
             <Grid.GestureRecognizers>
                 <PanGestureRecognizer PanUpdated="OnSheetPanUpdated"/>
             </Grid.GestureRecognizers>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="20"/>
-                <!-- drag handle -->
-                <RowDefinition Height="*"/>
-                <!-- content -->
-            </Grid.RowDefinitions>
+            <ScrollView>
+                <VerticalStackLayout
+            x:Name="PoiContent"
+            Opacity="0"
+            TranslationY="10"
+            Spacing="10">
 
-            <Grid HeightRequest="40">
-                <BoxView
+                    <BoxView
                 HeightRequest="5"
-                WidthRequest="50"
+                WidthRequest="40"
                 HorizontalOptions="Center"
                 CornerRadius="3"
                 Color="Gray"
                 Margin="0,0,0,5" />
-            </Grid>
 
-            <ScrollView Grid.Row="1">
-                <VerticalStackLayout
-                    x:Name="PoiContent"
-                    Opacity="0"
-                    TranslationY="0"
-                    Spacing="10">
+                    <CarouselView ItemsSource="{Binding SelectedPoi.ImageList}"
+                          IndicatorView="indicatorView" 
+                          HeightRequest="200" 
+                          HorizontalOptions="FillAndExpand">
+                        <CarouselView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame CornerRadius="10" Padding="0" IsClippedToBounds="True" Margin="2">
+                                    <Image Source="{Binding}" 
+                                   Aspect="AspectFill"
+                                   HeightRequest="200" />
+                                </Frame>
+                            </DataTemplate>
+                        </CarouselView.ItemTemplate>
+                    </CarouselView>
 
-                    <VerticalStackLayout x:Name="SinglePoiView" IsVisible="True" Spacing="10">
-
-                        <Label Text="{Binding SelectedPoi.Name}"
-                           FontSize="22"
-                           FontAttributes="Bold"
-                           TextColor="Black" />
-
-                        <Label Text="{Binding SelectedPoi.Description}"
-                           FontSize="15"
-                           TextColor="#444444" />
-
-                        <CollectionView ItemsSource="{Binding SelectedPoi.ImageList}" HeightRequest="200" SelectionMode="None">
-                            <CollectionView.ItemsLayout>
-                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10"/>
-                            </CollectionView.ItemsLayout>
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <Frame CornerRadius="10" Padding="0" IsClippedToBounds="True" WidthRequest="180">
-                                        <Image Source="{Binding}" Aspect="AspectFill" HeightRequest="200"/>
-                                    </Frame>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
-
-                        <IndicatorView x:Name="indicatorView"
+                    <IndicatorView x:Name="indicatorView"
                            HorizontalOptions="Center"
                            IndicatorColor="LightGray"
                            SelectedIndicatorColor="DeepSkyBlue" />
 
-                        <HorizontalStackLayout Spacing="10" Margin="0,5,0,10">
-                            <Button x:Name="SaveBtn"
-                                Text="Save"
-                                ImageSource="{FontImage FontFamily=MaterialIcons, Glyph='', Color=Gray}" 
-                                ContentLayout="Left, 10"
-                                BackgroundColor="#F0F0F0"
-                                TextColor="Black"
-                                CornerRadius="20"
-                                HeightRequest="40"
-                                Padding="15,0"
-                                FontSize="13"
-                                Clicked="OnSaveClicked" 
-                                   
-                                    />
-                        </HorizontalStackLayout>
+                    <Label
+                Text="{Binding SelectedPoi.Name}"
+                FontSize="22"
+                FontAttributes="Bold"
+                TextColor="Black" />
 
-                    </VerticalStackLayout>
-
-
-                    <!--List Poi-->
-                    <CollectionView x:Name="PoiListView" 
-                        IsVisible="False" 
-                        SelectionMode="Single"
-                        SelectionChanged="OnPoiSelectionChanged"
-                        VerticalOptions="FillAndExpand">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <VerticalStackLayout Padding="0,15" Spacing="10">
-
-                                    <CollectionView ItemsSource="{Binding ImageList}" 
-                                HeightRequest="150">
-                                        <CollectionView.ItemsLayout>
-                                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10"/>
-                                        </CollectionView.ItemsLayout>
-                                        <CollectionView.ItemTemplate>
-                                            <DataTemplate>
-                                                <Frame CornerRadius="12" Padding="0" IsClippedToBounds="True" WidthRequest="220" HasShadow="False">
-                                                    <Image Source="{Binding}" Aspect="AspectFill" HeightRequest="150"/>
-                                                </Frame>
-                                            </DataTemplate>
-                                        </CollectionView.ItemTemplate>
-                                    </CollectionView>
-
-                                    <Grid ColumnDefinitions="*, Auto" Padding="5,0">
-                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                            <Label Text="{Binding Name}" 
-                                               FontSize="18" 
-                                               FontAttributes="Bold" 
-                                               TextColor="Black" />
-
-                                            <Label Text="{Binding Description}" 
-                                               FontSize="14" 
-                                               TextColor="Gray" 
-                                               MaxLines="2" />
-                                        </VerticalStackLayout>
-
-                                        <ImageButton Grid.Column="1"
-                                             Source="{Binding IsFavorite, Converter={StaticResource FavoriteIconConverter}}"
-                                             WidthRequest="35"
-                                             HeightRequest="35"
-                                             VerticalOptions="Start" />
-
-                                        <HorizontalStackLayout Spacing="10"
-                                           Margin="0,5,0,10"
-                                           HorizontalOptions="End">
-
-                                            <Button
-                                                Text="Save"
-                                                ImageSource="{FontImage FontFamily=MaterialIcons, Glyph='', Color=Gray}"
-                                                Clicked="OnFavoriteToggleClicked"
-                                                CommandParameter="{Binding .}"
-                                                BackgroundColor="#F0F0F0"
-                                                TextColor="Black"
-                                                CornerRadius="20"
-                                                HeightRequest="40">
-
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Style.Triggers>
-
-                                                            <DataTrigger TargetType="Button"
-                                                                 Binding="{Binding IsFavorite}"
-                                                                 Value="True">
-                                                                <Setter Property="Text" Value="Saved"/>
-                                                                <Setter Property="BackgroundColor" Value="#E3F2FD"/>
-                                                                <Setter Property="TextColor" Value="DeepSkyBlue"/>
-                                                            </DataTrigger>
-
-                                                            <DataTrigger TargetType="Button"
-                                                                 Binding="{Binding IsFavorite}"
-                                                                 Value="False">
-                                                                <Setter Property="Text" Value="Save"/>
-                                                                <Setter Property="BackgroundColor" Value="#F0F0F0"/>
-                                                                <Setter Property="TextColor" Value="Black"/>
-                                                            </DataTrigger>
-
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
-
-                                            </Button>
-
-                                        </HorizontalStackLayout>
-
-                                    </Grid>
-
-                                    <BoxView HeightRequest="1" Color="#EEEEEE" Margin="0,10,0,0"/>
-
-                                </VerticalStackLayout>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                    <Label
+                Text="{Binding SelectedPoi.Description}"
+                FontSize="15"
+                TextColor="#444444" />
                 </VerticalStackLayout>
-                
             </ScrollView>
         </Grid>
-        </Grid>
+        <!-- SQLITE TEST -->
+        <!--<VerticalStackLayout
+        Padding="10"
+        VerticalOptions="Center"
+        HorizontalOptions="Start"
+        BackgroundColor="#AAFFFFFF">
+
+            <Label
+            x:Name="ResultLabel"
+            Text="SQLite Test"
+            FontSize="16"/>
+
+            <Button
+            Text="Test SQLite"
+            Clicked="TestSQLite_Clicked"/>
+
+        </VerticalStackLayout>-->
+    </Grid>
 </ContentPage>
