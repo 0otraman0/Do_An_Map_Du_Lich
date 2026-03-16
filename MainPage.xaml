@@ -12,7 +12,8 @@
             x:Name="MyMap"
             IsShowingUser="True"
             MapType="Street"
-            IsZoomEnabled="True"/>
+            IsZoomEnabled="True"
+            IsVisible="False"/>
 
         <!-- TOP OVERLAY -->
         <Grid VerticalOptions="Start"

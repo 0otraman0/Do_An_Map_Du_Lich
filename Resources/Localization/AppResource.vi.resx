@@ -123,4 +123,7 @@
   <data name="Search_placeholder" xml:space="preserve">
     <value>Tìm kiếm địa điểm</value>
   </data>
+  <data name="Sound_setting_button" xml:space="preserve">
+    <value>Phát âm thanh khi đi ngang qua điểm tham quan</value>
+  </data>
 </root>

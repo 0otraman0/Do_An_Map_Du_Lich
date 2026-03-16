@@ -77,5 +77,14 @@ namespace MauiAppMain.Resources.Localization {
                 return ResourceManager.GetString("Setting", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Play sound when walk past Point of interest.
+        /// </summary>
+        public static string Sound_setting_button {
+            get {
+                return ResourceManager.GetString("Sound_setting_button", resourceCulture);
+            }
+        }
     }
 }

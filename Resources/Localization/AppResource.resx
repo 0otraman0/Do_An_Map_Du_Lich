@@ -123,4 +123,7 @@
   <data name="Search_placeholder" xml:space="preserve">
     <value>Search here</value>
   </data>
+  <data name="Sound_setting_button" xml:space="preserve">
+    <value>Play sound when walk past Point of interest</value>
+  </data>
 </root>

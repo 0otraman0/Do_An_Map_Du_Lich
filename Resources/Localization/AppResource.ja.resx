@@ -117,10 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Setting" xml:space="preserve">
+    <value>設定</value>
+  </data>
   <data name="Search_placeholder" xml:space="preserve">
     <value>ここで検索してください</value>
   </data>
-  <data name="Setting" xml:space="preserve">
-    <value>設定</value>
+  <data name="Sound_setting_button" xml:space="preserve">
+    <value>興味のある場所を通過すると音が鳴る</value>
   </data>
 </root>

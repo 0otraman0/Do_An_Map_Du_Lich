@@ -32,6 +32,13 @@ public class CustomMapHandler : MapHandler
         {
             _googleMap = map;
 
+            // Hide Google POI markers
+            _googleMap.SetMapStyle(
+                new MapStyleOptions(
+                    "[{\"featureType\":\"poi\",\"stylers\":[{\"visibility\":\"off\"}]}]"
+                )
+            );
+
             if (VirtualView != null)
             {
                 MapPins(this, VirtualView);

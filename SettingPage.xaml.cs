@@ -17,11 +17,14 @@ public partial class SettingPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        
+        bool playSound = Preferences.Get("SoundPlayWhenClickedPOI", false);
+        soundCheckBox.IsChecked = playSound;
 
         var languages = await database.GetLanguagesAsync();
 
         // show current language
-        var savedCode = Preferences.Get("app_language", "en");
+        var savedCode = Preferences.Get("App_language", "en");
 
         var current = languages.FirstOrDefault(l => l.Code == savedCode);
 
@@ -30,16 +33,6 @@ public partial class SettingPage : ContentPage
 
         LanguageList.ItemsSource = languages;
     }
-        //void aOnLanguageSelected(object sender, SelectionChangedEventArgs e)
-        //{
-        //var lang = e.CurrentSelection.FirstOrDefault() as Language_option;
-
-        //    if (lang == null)
-        //        return;
-
-        //    LanguageService.SetLanguage(lang.Code);
-        //}
-
     void OnLanguageSelected(object sender, SelectionChangedEventArgs e)
     {
         if (e.CurrentSelection.FirstOrDefault() is not Language_option lang)
@@ -84,17 +77,22 @@ public partial class SettingPage : ContentPage
     {
         if (LanguageContainer.HeightRequest == 0)
         {
-            double targetHeight = 200; // adjust depending on list size
+            int itemCount = ((IEnumerable<Language_option>)LanguageList.ItemsSource)?.Count() ?? 0;
 
-            await LanguageContainer
-                .HeightRequestTo(targetHeight, 400, Easing.CubicOut);
+            double targetHeight = itemCount * 40; // each item ~40px
+
+            await LanguageContainer.HeightRequestTo(targetHeight, 300, Easing.CubicOut);
         }
         else
         {
-            await LanguageContainer
-                .HeightRequestTo(0, 350, Easing.CubicIn);
+            await LanguageContainer.HeightRequestTo(0, 250, Easing.CubicIn);
         }
     }
+    public async void OnSoundCheckedChanged(object sender, CheckedChangedEventArgs e)
+    {
+        Preferences.Set("SoundPlayWhenClickedPOI", e.Value);
+    }
+
 }
 public static class AnimationExtensions
 {

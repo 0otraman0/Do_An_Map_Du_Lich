@@ -2,7 +2,6 @@
 using MauiAppMain.Services;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
-using System.Globalization;
 using MauiAppMain.Resources.Localization;
 
 namespace MauiAppMain
@@ -51,14 +50,13 @@ namespace MauiAppMain
                 if (_pois.Count > 0)
                 {
                     LoadPoisOnMap();
-
-                    // Di chuyển tới điểm đầu tiên khi khởi động
-                    var firstPoi = _pois[0];
-                    MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                        new Location(firstPoi.Latitude, firstPoi.Longitude),
-                        Distance.FromMeters(500)));
                 }
+                // set the zoom distance of map
+                await ZoomToUserAndFarthestPoi();
 
+                // show map only after zoom is set
+                MyMap.IsVisible = true;
+                // start tracking user in real-time
                 StartTracking();
             }
             catch (Exception ex)
@@ -128,12 +126,15 @@ namespace MauiAppMain
             }
 
             // Phát âm thanh mô tả
-            _ = SpeakPoiDescription(poi);
+            // Nếu cài đặt cho phép
+            //if (Preferences.Get("SoundPlayWhenClickedPOI", false) == true)
+            //{
+            //    await SpeakPoiDescription(poi);
+            //}
         }
-
         public async Task SpeakPoiDescription(PointOfInterest poi)
         {
-            if (poi == null || string.IsNullOrWhiteSpace(poi.Description)) return;
+            if (poi == null || string.IsNullOrWhiteSpace(poi.Description) || Preferences.Get("SoundPlayWhenClickedPOI", false) == false) return;
 
             // Ép chạy trên luồng giao diện (Main Thread)
             await MainThread.InvokeOnMainThreadAsync(async () =>
@@ -182,12 +183,6 @@ namespace MauiAppMain
                                 _ = SpeakPoiDescription(poi);
                                 break;
                             }
-                        }
-
-                        if (!_mapInitialized)
-                        {
-                            MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(location, Distance.FromMeters(200)));
-                            _mapInitialized = true;
                         }
                     }
                     await Task.Delay(4000, _cts.Token);
@@ -313,6 +308,39 @@ namespace MauiAppMain
                 Console.WriteLine(ex.Message);
             }
         }
-        
+        async Task ZoomToUserAndFarthestPoi()
+        {
+            var location = await Geolocation.GetLocationAsync();
+
+            if (location == null || _pois.Count == 0)
+                return;
+
+            var userLocation = new Location(location.Latitude, location.Longitude);
+
+            double maxDistance = 0;
+
+            foreach (var poi in _pois)
+            {
+                var poiLocation = new Location(poi.Latitude, poi.Longitude);
+
+                double distance = Location.CalculateDistance(
+                    userLocation,
+                    poiLocation,
+                    DistanceUnits.Kilometers);
+
+                if (distance > maxDistance)
+                    maxDistance = distance;
+            }
+
+            // add padding so markers are not at the edge
+            double radius = maxDistance * 1.3;
+
+            MyMap.MoveToRegion(
+                MapSpan.FromCenterAndRadius(
+                    userLocation,
+                    Distance.FromKilometers(radius)
+                )
+            );
+        }
     }
 }
