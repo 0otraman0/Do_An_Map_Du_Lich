@@ -41,6 +41,14 @@ namespace MauiAppMain
         protected override async void OnAppearing()
         {
             base.OnAppearing();
+
+            var status = await Permissions.RequestAsync<Permissions.LocationAlways>();
+
+            if (status != PermissionStatus.Granted)
+            {
+                await DisplayAlert("Permission", "Location permission required", "OK");
+                return;
+            }
             SearchEntry.Text = AppResource.Search_placeholder;
             try
             {
@@ -57,7 +65,16 @@ namespace MauiAppMain
                 // show map only after zoom is set
                 MyMap.IsVisible = true;
                 // start tracking user in real-time
-                StartTracking();
+#if ANDROID
+                if (!LocationForegroundService.IsRunning)
+                {
+                    var intent = new Android.Content.Intent(
+                    Android.App.Application.Context,
+                    typeof(LocationForegroundService));
+
+                    Android.App.Application.Context.StartForegroundService(intent);
+                }
+                #endif
             }
             catch (Exception ex)
             {
@@ -153,43 +170,43 @@ namespace MauiAppMain
         }
 
         // --- GPS TRACKING LOGIC ---
-        async void StartTracking()
-        {
-            if (await Permissions.RequestAsync<Permissions.LocationWhenInUse>() != PermissionStatus.Granted)
-                return;
+        //async void StartTracking()
+        //{
+        //    if (await Permissions.RequestAsync<Permissions.LocationWhenInUse>() != PermissionStatus.Granted)
+        //        return;
 
-            _cts = new CancellationTokenSource();
-            try
-            {
-                while (!_cts.Token.IsCancellationRequested)
-                {
-                    var request = new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(4));
-                    var location = await Geolocation.GetLocationAsync(request, _cts.Token);
+        //    _cts = new CancellationTokenSource();
+        //    try
+        //    {
+        //        while (!_cts.Token.IsCancellationRequested)
+        //        {
+        //            var request = new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(4));
+        //            var location = await Geolocation.GetLocationAsync(request, _cts.Token);
 
-                    if (location != null)
-                    {
-                        // Kiểm tra khoảng cách để tự động đọc audio khi đi ngang qua
-                        foreach (var poi in _pois)
-                        {
-                            // Sử dụng hàm CalculateDistance có sẵn của đối tượng Location
-                            double distance = location.CalculateDistance(new Location(poi.Latitude, poi.Longitude), DistanceUnits.Kilometers);
+        //            if (location != null)
+        //            {
+        //                // Kiểm tra khoảng cách để tự động đọc audio khi đi ngang qua
+        //                foreach (var poi in _pois)
+        //                {
+        //                    // Sử dụng hàm CalculateDistance có sẵn của đối tượng Location
+        //                    double distance = location.CalculateDistance(new Location(poi.Latitude, poi.Longitude), DistanceUnits.Kilometers);
 
-                            // Vì kết quả trả về là Kilometers, ta nhân với 1000 để ra Meters
-                            double distanceInMeters = distance * 1000;
+        //                    // Vì kết quả trả về là Kilometers, ta nhân với 1000 để ra Meters
+        //                    double distanceInMeters = distance * 1000;
 
-                            if (distanceInMeters < 50 && _lastSpokenPoi != poi)
-                            {
-                                _lastSpokenPoi = poi;
-                                _ = SpeakPoiDescription(poi);
-                                break;
-                            }
-                        }
-                    }
-                    await Task.Delay(4000, _cts.Token);
-                }
-            }
-            catch { }
-        }
+        //                    if (distanceInMeters < 50 && _lastSpokenPoi != poi)
+        //                    {
+        //                        _lastSpokenPoi = poi;
+        //                        _ = SpeakPoiDescription(poi);
+        //                        break;
+        //                    }
+        //                }
+        //            }
+        //            await Task.Delay(4000, _cts.Token);
+        //        }
+        //    }
+        //    catch { }
+        //}
 
         // --- BOTTOM SHEET ANIMATION ---
         async Task HideBottomSheet()
@@ -250,14 +267,14 @@ namespace MauiAppMain
 
                 var initialPois = new List<PointOfInterest>
                 {
-                new PointOfInterest
-                {
+                    new PointOfInterest
+                    {
                     Name = "Trường học",
                     Description = "Trường học là nơi tôi được học.",
                     Latitude = 10.759893,
                     Longitude = 106.679930,
                     ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList1)
-                },
+                    },
                     new PointOfInterest
                     {
                     Name = "Quán Cà Phê",

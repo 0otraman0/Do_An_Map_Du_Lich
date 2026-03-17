@@ -1,0 +1,146 @@
+﻿using Android.App;
+using Android.Content;
+using Android.Media;
+using Android.OS;
+using MauiAppMain.Models;
+using MauiAppMain.Services;
+using Stream = Android.Media.Stream;
+
+[Service(ForegroundServiceType = Android.Content.PM.ForegroundService.TypeLocation)]
+public class LocationForegroundService : Service
+{
+    public static bool IsRunning = false;
+    private readonly DatabaseService database = new DatabaseService();
+    private List<PointOfInterest> _pois = new();
+    private PointOfInterest? _lastSpokenPoi;
+
+    CancellationTokenSource _cts;
+
+    public override IBinder OnBind(Intent intent) => null;
+
+    public override StartCommandResult OnStartCommand(Intent intent, StartCommandFlags flags, int startId)
+    {
+        if (IsRunning)
+            return StartCommandResult.Sticky;
+
+        IsRunning = true;
+
+        StartForeground(1001, CreateNotification());
+
+        _cts = new CancellationTokenSource();
+        _ = InitAndStartTracking(_cts.Token);
+        _ = StartTracking(_cts.Token);
+
+        return StartCommandResult.Sticky;
+    }
+
+    async Task InitAndStartTracking(CancellationToken token)
+    {
+        _pois = await database.GetPOIsAsync();
+    }
+
+    async Task StartTracking(CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                var request = new GeolocationRequest(
+                    GeolocationAccuracy.High,
+                    TimeSpan.FromSeconds(4));
+
+                var location = await Geolocation.GetLocationAsync(request, token);
+
+                if (location != null)
+                {
+                    foreach (var poi in _pois)
+                    {
+                        double distance = location.CalculateDistance(
+                            new Location(poi.Latitude, poi.Longitude),
+                            DistanceUnits.Kilometers);
+
+                        double meters = distance * 1000;
+
+                        if (meters < 50 && _lastSpokenPoi != poi)
+                        {
+                            _lastSpokenPoi = poi;
+                            _ = SpeakPoiDescription(poi);
+                            break;
+                        }
+                    }
+                }
+
+                await Task.Delay(4000, token);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    Notification CreateNotification()
+    {
+        string channelId = "location_service";
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        {
+            var channel = new NotificationChannel(
+                channelId,
+                "Background Tracking",
+                NotificationImportance.Default);
+
+            var manager = (NotificationManager)GetSystemService(NotificationService);
+            manager.CreateNotificationChannel(channel);
+        }
+
+        return new Notification.Builder(this, channelId)
+            .SetContentTitle("Tour Guide")
+            .SetContentText("Tracking location in background")
+            .SetSmallIcon(Android.Resource.Drawable.IcMenuMyLocation)
+            .Build();
+    }
+
+    public override void OnDestroy()
+    {
+        IsRunning = false;
+        _cts?.Cancel();
+        base.OnDestroy();
+    }
+    // Hàm này sẽ được gọi khi bạn muốn phát âm mô tả của một POI nào đó
+    public async Task SpeakPoiDescription(PointOfInterest poi)
+    {
+        if (poi == null || string.IsNullOrWhiteSpace(poi.Description) || Preferences.Get("SoundPlayWhenClickedPOI", false) == false) return;
+
+
+        var audioManager = (AudioManager)GetSystemService(AudioService);
+
+        var focusRequest = audioManager.RequestAudioFocus(
+            null,
+            Stream.Music,
+            AudioFocus.GainTransientMayDuck
+        );
+        // Ép chạy trên luồng giao diện (Main Thread)
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            try
+            {
+                // Thử phát âm câu đơn giản nhất, không dùng Options phức tạp
+                await TextToSpeech.Default.SpeakAsync(poi.Description);
+            }
+            catch (Exception ex)
+            {
+                // Nếu có lỗi, nó sẽ hiện thông báo lên màn hình cho bạn biết
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+            }
+            finally
+            {
+                // Release audio focus after speaking
+                audioManager.AbandonAudioFocus(null);
+            }
+        });
+    }
+}
