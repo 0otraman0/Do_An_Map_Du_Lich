@@ -1,0 +1,392 @@
+[
+    {
+        "Id": 1,
+        "Name_vi": "Bò Né 3 Ngon",
+        "Name_en": "Bo Ne 3 Ngon",
+        "Name_ja": "ボネー3ゴン",
+
+
+        "Address_vi": "40 Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
+        "Address_en": "40 Vinh Khanh Street, Ward 8, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区8坊ヴィンカイン通り40番地",
+
+        "Latitude": 10.761819,
+        "Longitude": 106.702132,
+
+        "Radius": 10,
+        "NearRadius": 0,
+        "Priority": 2,
+        "Rating": 4.5,
+
+        "Content_vi": "Bò né Sài Gòn",
+        "Content_en": "Saigon sizzling beef",
+        "Content_ja": "サイゴン風ボネー",
+
+        "Description_vi": "Gian hàng chuyên bán đồ ăn",
+        "Description_en": "Food stall",
+        "Description_ja": "屋台フード店",
+
+        "Detail_vi": "Bò Né 3 Ngon phục vụ món bò né truyền thống.",
+        "Detail_en": "Bo Ne 3 Ngon serves traditional sizzling beef.",
+        "Detail_ja": "ボネー3ゴンでは伝統的なベトナムのボネー料理を提供しています。",
+
+        "ImageUrl": "bone.webp"
+    },
+    {
+        "Id": 2,
+        "Name_vi": "Chè Miền Tây",
+        "Name_en": "Western Sweet Soup",
+        "Name_ja": "西部チェー",
+
+        "Address_vi": "42 Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
+
+        "Address_en": "42 Vinh Khanh Street, Ward 8, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区8坊ヴィンカイン通り42番地",
+
+        "Latitude": 10.761536,
+        "Longitude": 106.702303,
+
+        "Radius": 10,
+        "NearRadius": 0,
+        "Priority": 3,
+        "Rating": 4.7,
+
+        "Content_vi": "Chè truyền thống miền Nam",
+        "Content_en": "Traditional Southern Vietnamese sweet soup",
+        "Content_ja": "南部ベトナムの伝統的なチェー",
+
+        "Description_vi": "Gian hàng chuyên bán đồ ăn vặt",
+        "Description_en": "Snack food stall",
+        "Description_ja": "デザート屋台",
+
+        "Detail_vi": "Chè Miền Tây với nhiều loại chè ngon.",
+        "Detail_en": "Western Sweet Soup offers many delicious Vietnamese dessert soups.",
+        "Detail_ja": "西部チェーでは様々な美味しいベトナムデザートスープを提供しています。",
+
+        "ImageUrl": "che.jpg"
+    },
+    {
+        "Id": 3,
+        "Name_vi": "Ốc Đào",
+        "Name_en": "Oc Dao Snail Restaurant",
+        "Name_ja": "オックダオ",
+
+        "Address_vi": "132 Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
+        "Address_en": "132 Vinh Khanh Street, Ward 8, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区8坊ヴィンカイン通り132番地",
+
+        "Latitude": 10.761394,
+        "Longitude": 106.702695,
+
+
+        "Radius": 10,
+        "NearRadius": 0,
+        "Priority": 4,
+        "Rating": 4.8,
+
+        "Content_vi": "Quán ốc nổi tiếng Sài Gòn",
+        "Content_en": "Famous snail restaurant in Saigon",
+        "Content_ja": "サイゴンで有名な巻貝レストラン",
+
+        "Description_vi": "Chuyên các món ốc xào, nướng",
+        "Description_en": "Specializes in stir-fried and grilled snail dishes",
+        "Description_ja": "炒め物や焼き巻貝料理が有名",
+
+        "Detail_vi": "Ốc Đào là quán ốc nổi tiếng với nhiều món như ốc hương rang muối...",
+        "Detail_en": "Oc Dao is a famous snail restaurant with dishes like salt-roasted snails.",
+        "Detail_ja": "オックダオは塩焼き巻貝など多くの料理で有名なレストランです。",
+
+        "ImageUrl": "ocdao.jpg"
+    },
+    {
+        "Id": 4,
+        "Name_vi": "Ốc 2",
+        "Name_en": "Snail Restaurant 2",
+        "Name_ja": "オックレストラン2",
+
+        "Address_vi": "135 Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
+        "Address_en": "135 Vinh Khanh Street, Ward 8, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区8坊ヴィンカイン通り135番地",
+
+        "Latitude": 10.761364,
+        "Longitude": 106.702579,
+
+        "Radius": 10,
+        "NearRadius": 0,
+        "Priority": 5,
+        "Rating": 4.3,
+
+        "Content_vi": "Quán ốc nổi tiếng Sài Gòn vui nhộn",
+        "Content_en": "A lively famous snail restaurant in Saigon",
+        "Content_ja": "活気のあるサイゴンの有名な巻貝レストラン",
+
+        "Description_vi": "Chuyên các món ốc xào, nướng",
+        "Description_en": "Specializes in stir-fried and grilled snail dishes",
+        "Description_ja": "炒め物や焼き巻貝料理専門",
+
+        "Detail_vi": "Quán ốc với nhiều món nổi tiếng như ốc hương rang muối...",
+        "Detail_en": "A snail restaurant with many popular dishes such as salt roasted snails.",
+        "Detail_ja": "塩焼き巻貝など多くの人気料理を提供するレストランです。",
+
+        "ImageUrl": "ocdao.jpg"
+    },
+    {
+
+        "Id": 5,
+        "Name_vi": "Phở Hòa Pasteur",
+        "Name_en": "Pho Hoa Pasteur",
+        "Name_ja": "フォーホア・パスツール",
+
+        "Address_vi": "260C Pasteur, Phường Võ Thị Sáu, Quận 3, TP.HCM",
+        "Address_en": "260C Pasteur Street, Vo Thi Sau Ward, District 3, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市3区ボーティサウ坊パスツール通り260C",
+
+        "Latitude": 10.762035,
+        "Longitude": 106.701717,
+
+        "Radius": 10,
+        "NearRadius": 0,
+        "Priority": 1,
+        "Rating": 4.7,
+
+        "Content_vi": "Quán phở bò nổi tiếng tại Sài Gòn",
+        "Content_en": "Famous Vietnamese beef noodle soup in Saigon",
+        "Content_ja": "サイゴンで有名な牛肉フォー",
+
+        "Description_vi": "Chuyên phở bò truyền thống",
+        "Description_en": "Specializes in traditional Vietnamese beef pho",
+        "Description_ja": "伝統的な牛肉フォー専門店",
+
+        "Detail_vi": "Phở Hòa Pasteur là một trong những quán phở lâu đời và nổi tiếng tại TP.HCM, với nước dùng đậm đà và thịt bò tươi.",
+        "Detail_en": "Pho Hoa Pasteur is one of the oldest and most famous pho restaurants in Ho Chi Minh City, known for its rich broth and fresh beef.",
+        "Detail_ja": "フォーホア・パスツールはホーチミン市で最も有名で歴史のあるフォー店の一つで、濃厚なスープと新鮮な牛肉で知られています。",
+
+        "ImageUrl": "pho.jpg"
+
+    },
+    {
+        "Id": 6,
+        "Name_vi": "Ốc Oanh",
+        "Name_en": "Oc Oanh Snail Restaurant",
+        "Name_ja": "オックオアン",
+
+        "Address_vi": "534 Vĩnh Khánh, Phường 8, Quận 4, TP.HCM",
+        "Address_en": "534 Vinh Khanh Street, Ward 8, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区8坊ヴィンカイン通り534番地",
+
+        "Latitude": 10.760880,
+        "Longitude": 106.703120,
+
+        "Radius": 15,
+        "NearRadius": 0,
+        "Priority": 3,
+        "Rating": 4.6,
+
+        "Content_vi": "Quán ốc nổi tiếng đông khách tại phố ẩm thực Vĩnh Khánh",
+        "Content_en": "Popular snail restaurant on Vinh Khanh food street",
+        "Content_ja": "ヴィンカイン通りの有名な巻貝レストラン",
+
+        "Description_vi": "Chuyên các món ốc tươi chế biến đậm vị",
+        "Description_en": "Specializes in fresh snail dishes with rich flavor",
+        "Description_ja": "新鮮な巻貝料理専門",
+
+        "Detail_vi": "Ốc Oanh là quán ốc nổi tiếng tại phố ẩm thực Vĩnh Khánh. Quán phục vụ nhiều món như ốc hương rang muối, sò điệp nướng mỡ hành, ốc móng tay xào tỏi. Không gian bình dân nhưng luôn đông khách nhờ hương vị đậm đà đặc trưng.",
+        "Detail_en": "Oc Oanh is a well-known snail restaurant on the Vinh Khanh food street. The menu includes salt-roasted snails, grilled scallops with scallion oil, and garlic stir-fried razor clams.",
+        "Detail_ja": "オックオアンはヴィンカイン通りで人気の巻貝料理店で、塩焼き巻貝やホタテのネギ油焼きなどが有名です。",
+
+        "ImageUrl": "ocoanh.jpg"
+    },
+    {
+        "Id": 7,
+        "Name_vi": "Ốc Tô",
+        "Name_en": "Oc To Snail Restaurant",
+        "Name_ja": "オックトー",
+
+        "Address_vi": "224 Vĩnh Khánh, Phường 10, Quận 4, TP.HCM",
+        "Address_en": "224 Vinh Khanh Street, Ward 10, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区10坊ヴィンカイン通り224番地",
+
+        "Latitude": 10.760867,
+        "Longitude": 106.703450,
+
+        "Radius": 15,
+        "NearRadius": 0,
+        "Priority": 4,
+        "Rating": 4.4,
+
+        "Content_vi": "Quán ốc bình dân được nhiều người địa phương yêu thích",
+        "Content_en": "Local favorite snail restaurant",
+        "Content_ja": "地元で人気の巻貝レストラン",
+
+        "Description_vi": "Chuyên các món ốc xào cay và nướng",
+        "Description_en": "Specializes in spicy stir-fried and grilled snails",
+        "Description_ja": "炒め物と焼き巻貝料理専門",
+
+        "Detail_vi": "Ốc Tô nổi tiếng với các món ốc xào cay và nước sốt đậm vị. Những món được yêu thích gồm ốc len xào dừa, ốc mỡ xào me và sò huyết nướng mỡ hành. Quán có không khí nhộn nhịp đặc trưng của phố ẩm thực Sài Gòn.",
+        "Detail_en": "Oc To is famous for spicy stir-fried snails and flavorful sauces, including coconut stir-fried snails and grilled blood cockles.",
+        "Detail_ja": "オックトーはココナッツ炒め巻貝などで有名な活気あるレストランです。",
+
+        "ImageUrl": "octo.jpg"
+    },
+    {
+        "Id": 8,
+        "Name_vi": "Ốc Thảo",
+        "Name_en": "Oc Thao Snail Restaurant",
+        "Name_ja": "オックタオ",
+
+        "Address_vi": "256 Vĩnh Khánh, Phường 10, Quận 4, TP.HCM",
+        "Address_en": "256 Vinh Khanh Street, Ward 10, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区10坊ヴィンカイン通り256番地",
+
+        "Latitude": 10.760820,
+        "Longitude": 106.704060,
+
+        "Radius": 15,
+        "NearRadius": 0,
+        "Priority": 2,
+        "Rating": 3.0,
+
+        "Content_vi": "Quán ốc nổi tiếng với nước chấm đặc biệt",
+        "Content_en": "Famous snail restaurant with special dipping sauce",
+        "Content_ja": "特製ソースが有名な巻貝店",
+
+        "Description_vi": "Quán ốc lâu năm tại Quận 4",
+        "Description_en": "Long-running snail restaurant in District 4",
+        "Description_ja": "4区の老舗巻貝レストラン",
+
+        "Detail_vi": "Ốc Thảo là quán ốc lâu năm tại khu phố ẩm thực Vĩnh Khánh. Các món nổi bật gồm ốc hương rang muối, sò điệp nướng phô mai và ốc bươu nướng tiêu xanh. Nước chấm tại quán được pha chế theo công thức riêng rất được thực khách yêu thích.",
+        "Detail_en": "Oc Thao is a long-standing snail restaurant famous for its special dipping sauce and dishes like salt-roasted snails and grilled scallops with cheese.",
+        "Detail_ja": "オックタオは特製ソースと塩焼き巻貝で有名な老舗レストランです。",
+
+        "ImageUrl": "octhao.jpg"
+    },
+    {
+        "Id": 9,
+        "Name_vi": "Ốc Hương Vĩnh Khánh",
+        "Name_en": "Vinh Khanh Snail House",
+        "Name_ja": "ヴィンカイン巻貝ハウス",
+
+        "Address_vi": "310 Vĩnh Khánh, Phường 10, Quận 4, TP.HCM",
+        "Address_en": "310 Vinh Khanh Street, Ward 10, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区10坊ヴィンカイン通り310番地",
+
+        "Latitude": 10.760580,
+        "Longitude": 106.703913,
+
+        "Radius": 15,
+        "NearRadius": 0,
+        "Priority": 3,
+        "Rating": 4.4,
+
+        "Content_vi": "Quán ốc nổi tiếng tại phố ẩm thực Vĩnh Khánh",
+        "Content_en": "A famous snail restaurant on Vinh Khanh food street",
+        "Content_ja": "ヴィンカイン通りで有名な巻貝レストラン",
+
+        "Description_vi": "Chuyên các món ốc tươi và hải sản nướng",
+        "Description_en": "Specializes in fresh snails and grilled seafood",
+        "Description_ja": "新鮮な巻貝と焼き海鮮料理",
+
+        "Detail_vi": "Ốc Hương Vĩnh Khánh nổi bật với các món ốc hương rang muối, sò điệp nướng mỡ hành và nghêu hấp sả. Không gian bình dân nhưng rất nhộn nhịp vào buổi tối.",
+        "Detail_en": "Vinh Khanh Snail House is known for salt roasted snails, grilled scallops with scallion oil and lemongrass steamed clams.",
+        "Detail_ja": "塩焼き巻貝やホタテのネギ油焼きなどで人気の巻貝レストランです。",
+
+        "ImageUrl": "snail_vinhkhanh.webp"
+    },
+    {
+        "Id": 10,
+        "Name_vi": "Ốc Đêm Quận 4",
+        "Name_en": "District 4 Night Snail Restaurant",
+        "Name_ja": "4区ナイト巻貝",
+
+        "Address_vi": "288 Vĩnh Khánh, Phường 10, Quận 4, TP.HCM",
+        "Address_en": "288 Vinh Khanh Street, Ward 10, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区10坊ヴィンカイン通り288番地",
+
+        "Latitude": 10.760722,
+        "Longitude": 106.703298,
+
+        "Radius": 15,
+        "NearRadius": 0,
+        "Priority": 4,
+        "Rating": 4.6,
+
+        "Content_vi": "Quán ốc mở cửa đến khuya tại phố ẩm thực",
+        "Content_en": "Late night snail restaurant on food street",
+        "Content_ja": "深夜まで営業する巻貝店",
+
+        "Description_vi": "Quán ốc nhộn nhịp vào buổi tối",
+        "Description_en": "A lively snail restaurant at night",
+        "Description_ja": "夜に賑わう巻貝レストラン",
+
+        "Detail_vi": "Ốc Đêm Quận 4 phục vụ nhiều món ốc xào cay, ốc mỡ cháy tỏi và sò huyết nướng mỡ hành. Đây là địa điểm quen thuộc của người thích ăn đêm tại Sài Gòn.",
+        "Detail_en": "District 4 Night Snail Restaurant offers spicy stir fried snails, garlic fried snails and grilled blood cockles.",
+        "Detail_ja": "辛い炒め巻貝や焼き巻貝料理で有名な夜営業のレストランです。",
+
+        "ImageUrl": "snail_night.jpg"
+    },
+    {
+        "Id": 11,
+        "Name_vi": "Ốc Sài Gòn Phố",
+        "Name_en": "Saigon Street Snail Restaurant",
+        "Name_ja": "サイゴンストリート巻貝",
+
+        "Address_vi": "260 Vĩnh Khánh, Phường 10, Quận 4, TP.HCM",
+        "Address_en": "260 Vinh Khanh Street, Ward 10, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区10坊ヴィンカイン通り260番地",
+
+        "Latitude": 10.760686,
+        "Longitude": 106.703610,
+
+        "Radius": 15,
+        "NearRadius": 0,
+        "Priority": 2,
+        "Rating": 4.5,
+
+        "Content_vi": "Quán ốc mang phong cách ẩm thực đường phố",
+        "Content_en": "Street style snail restaurant",
+        "Content_ja": "屋台スタイル巻貝レストラン",
+
+        "Description_vi": "Chuyên các món ốc xào me và nướng",
+        "Description_en": "Specializes in tamarind stir fried and grilled snails",
+        "Description_ja": "タマリンド炒めと焼き巻貝料理",
+
+        "Detail_vi": "Ốc Sài Gòn Phố nổi tiếng với các món như ốc len xào dừa, ốc mỡ xào me và sò điệp nướng phô mai. Hương vị đậm đà đặc trưng của ẩm thực đường phố Sài Gòn.",
+        "Detail_en": "Saigon Street Snail Restaurant serves coconut stir fried snails, tamarind snails and grilled scallops with cheese.",
+        "Detail_ja": "ココナッツ炒め巻貝やチーズ焼きホタテなどが人気です。",
+
+        "ImageUrl": "snail_street.jpg"
+    },
+    {
+        "Id": 12,
+        "Name_vi": "Ốc Hương Biển",
+        "Name_en": "Sea Aroma Snail Restaurant",
+        "Name_ja": "海の香り巻貝",
+
+        "Address_vi": "300 Vĩnh Khánh, Phường 10, Quận 4, TP.HCM",
+        "Address_en": "300 Vinh Khanh Street, Ward 10, District 4, Ho Chi Minh City",
+        "Address_ja": "ホーチミン市4区10坊ヴィンカイン通り300番地",
+
+        "Latitude": 10.760518,
+        "Longitude": 106.703605,
+
+        "Radius": 15,
+        "NearRadius": 0,
+        "Priority": 5,
+        "Rating": 4.7,
+
+        "Content_vi": "Quán ốc nổi tiếng với hải sản tươi",
+        "Content_en": "Famous for fresh seafood snails",
+        "Content_ja": "新鮮な海鮮巻貝で有名",
+
+        "Description_vi": "Nhiều món ốc biển đặc trưng",
+        "Description_en": "Various sea snail dishes",
+        "Description_ja": "海巻貝料理専門",
+
+        "Detail_vi": "Ốc Hương Biển nổi tiếng với các món như ốc hương rang muối, ốc móng tay xào tỏi và sò điệp nướng phô mai. Đây là địa điểm quen thuộc của người yêu hải sản.",
+        "Detail_en": "Sea Aroma Snail Restaurant offers salt roasted snails, garlic razor clams and grilled scallops with cheese.",
+        "Detail_ja": "塩焼き巻貝やガーリック炒め巻貝で有名なレストランです。",
+
+        "ImageUrl": "snail_sea.jpg"
+    }
+    
+]

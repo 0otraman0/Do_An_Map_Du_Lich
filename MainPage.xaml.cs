@@ -265,26 +265,73 @@ namespace MauiAppMain
                 var imageList1 = new List<string> { "school_1.jpg", "school_2.jpg", "school_3.jpg" };
                 var imageList2 = new List<string> { "cafe_1.jpg", "cafe_2.jpg" };
 
-                var initialPois = new List<PointOfInterest>
+                var initialPois = new List<Poi>
                 {
-                    new PointOfInterest
+                    new Poi
                     {
-                    Name = "Trường học",
-                    Description = "Trường học là nơi tôi được học.",
+                    //Name = "Trường học",
+                    //Description = "Trường học là nơi tôi được học.",
                     Latitude = 10.759893,
                     Longitude = 106.679930,
                     ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList1)
                     },
-                    new PointOfInterest
+                    new Poi
                     {
-                    Name = "Quán Cà Phê",
-                    Description = "Cà phê ngon nhất ở đây.",
+                    //Name = "Quán Cà Phê",
+                    //Description = "Cà phê ngon nhất ở đây.",
                     Latitude = 10.759548,
                     Longitude = 106.679105,
                     ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList2)
                     }
                 };
+                var initialDescriptions = new List<PoiDescription>
+                {
+                    new PoiDescription
+                    {
+                        PoiId = 1,
+                        Language = "en",
+                        Name = "School",
+                        Description = "The school is where I learned."
+                    },
+                    new PoiDescription
+                    {
+                        PoiId = 1,
+                        Language = "vi",
+                        Name = "Trường học",
+                        Description = "Trường học là nơi tôi được học."
+                    },
+                    new PoiDescription
+                    {
+                        PoiId = 1,
+                        Language = "ja",
+                        Name = "学校",
+                        Description = "学校は私が学んだ場所です。"
+                    },
+                    new PoiDescription
+                    {
+                        PoiId = 2,
+                        Language = "en",
+                        Name = "Cafe",
+                        Description = "The best coffee is here."
+                    },
+                    new PoiDescription
+                    {
+                        PoiId = 2,
+                        Language = "vi",
+                        Name = "Quán Cà Phê",
+                        Description = "Cà phê ngon nhất ở đây."
+                    },
+                    new PoiDescription
+                    {
+                        PoiId = 2,
+                        Language = "ja",
+                        Name = "カフェ",
+                        Description = "最高のコーヒーはここにあります。"
+                    }
+                };
                 foreach (var poi in initialPois) await _database.AddPOIAsync(poi);
+                foreach (var poides in initialDescriptions) await _database.AddPOIDescriptionAsync(poides);
+
             }
             // kiểm tra dữ liệu ngôn ngữ đã tồn tại chưa, nếu chưa thì thêm vào
             var existing_lang = await _database.GetLanguagesAsync();
