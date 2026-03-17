@@ -38,5 +38,10 @@ namespace MauiAppMain.Services
             await Init();
             await _database.InsertAsync(image);
         }
+
+        public Task<int> UpdatePOIAsync(PointOfInterest poi)
+        {
+            return _database.UpdateAsync(poi);
+        }
     }
 }
