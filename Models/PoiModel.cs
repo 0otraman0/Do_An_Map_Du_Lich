@@ -5,10 +5,12 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel;
+
 
 namespace MauiAppMain.Models
 {
-    public class PointOfInterest
+    public class PointOfInterest : INotifyPropertyChanged
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
@@ -21,7 +23,23 @@ namespace MauiAppMain.Models
         public string ImageUrlsJson { get; set; }
 
         //điểm yêu thích
-        public bool IsFavorite { get; set; }
+        private bool _isFavorite;
+        public bool IsFavorite
+        {
+            get => _isFavorite;
+            set
+            {
+                if (_isFavorite != value)
+                {
+                    _isFavorite = value;
+                    OnPropertyChanged(nameof(IsFavorite));
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         [Ignore] // Không lưu cột này vào DB, chỉ dùng để hiển thị
         public List<string> ImageList => string.IsNullOrEmpty(ImageUrlsJson)

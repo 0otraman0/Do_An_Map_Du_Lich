@@ -77,11 +77,11 @@
 
         <!--Tab Bar-->
         <Border
-        x:Name="MainTabBar"
-        VerticalOptions="End"
-        HeightRequest="75"
-        BackgroundColor="White"
-        StrokeThickness="0">
+            x:Name="MainTabBar"
+            VerticalOptions="End"
+            HeightRequest="75"
+            BackgroundColor="White"
+            StrokeThickness="0">
 
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="10,10,0,0" />
@@ -108,11 +108,9 @@
         
         <!-- BOTTOM SHEET -->
         <Grid
-    x:Name="PoiSheet"
-    BackgroundColor="White"
-    VerticalOptions="End"
-    Padding="20,10,20,20">
-
+            x:Name="PoiSheet"
+            BackgroundColor="White"
+            Padding="20,10,20,20">
 
 
             <Grid.GestureRecognizers>
@@ -136,12 +134,12 @@
                 Margin="0,0,0,5" />
             </Grid>
 
-            <ScrollView Grid.Row="1">
-                <VerticalStackLayout
+            <Grid Grid.Row="1"
+                
                     x:Name="PoiContent"
-                    Opacity="0"
+                    Opacity="1"
                     TranslationY="0"
-                    Spacing="10">
+                    Margin="0,0,0,75">
 
                     <VerticalStackLayout x:Name="SinglePoiView" IsVisible="True" Spacing="10">
 
@@ -284,9 +282,9 @@
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
-                </VerticalStackLayout>
                 
-            </ScrollView>
+                
+            </Grid>
         </Grid>
         </Grid>
 </ContentPage>
