@@ -18,7 +18,8 @@ namespace MauiAppMain.Models
         public double Longitude { get; set; } = 0;
         public double RadiusMeters { get; set; } = 0;
         public bool IsTriggered { get; set; } = false;
-        public string ImageUrlsJson { get; set; }
+        public string ImageUrlsJson { get; set; } = string.Empty;
+        public int priorityLevel {  get; set; } = 1;
 
         [Ignore] // Không lưu cột này vào DB, chỉ dùng để hiển thị
         public List<string> ImageList => string.IsNullOrEmpty(ImageUrlsJson)

@@ -120,6 +120,21 @@
             VerticalOptions="Center"/>
 
         </HorizontalStackLayout>
+        <HorizontalStackLayout
+        Padding = "0,15,0,0"
+        HorizontalOptions="Start">
+
+            <CheckBox
+            x:Name="VolumnBar"
+            />
+
+            <Label
+            Text="{x:Static resources:AppResource.Volumn_bar}" 
+            VerticalOptions="Center"/>
+
+        </HorizontalStackLayout>
+
+
     </VerticalStackLayout>
 
 </ContentPage>
