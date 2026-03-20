@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 
 
+
 namespace MauiAppMain
 {
     public partial class MainPage : ContentPage
@@ -15,6 +16,7 @@ namespace MauiAppMain
         private ObservableCollection<PointOfInterest> _pois = new ObservableCollection<PointOfInterest>();
         private Dictionary<Pin, PointOfInterest> _pinPoiMap = new();
         private ObservableCollection<PointOfInterest> _favorites = new ObservableCollection<PointOfInterest>();
+        private ObservableCollection<PointOfInterest> _displayedPois = new();
 
 
 
@@ -85,21 +87,46 @@ namespace MauiAppMain
             {
                 await SeedData(); // phải seed trước
 
-                var list = await _database.GetPOIsAsync();
-                _pois.Clear();
-                foreach (var poi in list)
-                    _pois.Add(poi);
-                PoiListView.ItemsSource = _pois;
-
-                if (_pois.Count > 0)
+                _displayedPois = new ObservableCollection<PointOfInterest>(_pois);
+                PoiListView.ItemsSource = _displayedPois;
+                // 👇 load DB nền
+                _ = Task.Run(async () =>
                 {
-                    LoadPoisOnMap();
+                    var list = await _database.GetPOIsAsync();
 
-                    var firstPoi = _pois[0];
-                    MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                        new Location(firstPoi.Latitude, firstPoi.Longitude),
-                        Distance.FromMeters(500)));
-                }
+                    await Task.Delay(100);
+
+                    MainThread.BeginInvokeOnMainThread(async () =>
+                    {
+                        _pois.Clear();
+                        foreach (var poi in list)
+                            _pois.Add(poi);
+
+                        _favorites.Clear();
+                        foreach (var poi in _pois)
+                            if (poi.IsFavorite)
+                                _favorites.Add(poi);
+
+                        // 🔥 PRELOAD LIST (quan trọng)
+                        PoiListContainer.IsVisible = true;
+                        PoiListContainer.Opacity = 0;
+
+                        await Task.Delay(50);
+
+                        PoiListContainer.Opacity = 1;
+                        PoiListContainer.IsVisible = false;
+
+                        if (_pois.Count > 0)
+                        {
+                            LoadPoisOnMap();
+
+                            var firstPoi = _pois[0];
+                            MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                                new Location(firstPoi.Latitude, firstPoi.Longitude),
+                                Distance.FromMeters(500)));
+                        }
+                    });
+                });
 
                 StartTracking();
             }
@@ -224,19 +251,9 @@ namespace MauiAppMain
             if (showList)
             {
                 SinglePoiView.IsVisible = false;
-                PoiListView.IsVisible = true;
+                PoiListContainer.IsVisible = true;
 
-                await Task.Delay(50);
-
-                // 🔥 FIX: nếu null thì dùng _pois
-                var source = pois ?? _pois;
-
-                PoiListView.ItemsSource = null;
-                PoiListView.ItemsSource = source;
-
-                PoiContent.Opacity = 1;
-
-                await PoiSheet.TranslateTo(0, _sheetFullY, 200, Easing.CubicOut);
+                await PoiSheet.TranslateTo(0, _sheetFullY, 50, Easing.CubicOut);
             }
         }
 
@@ -252,6 +269,8 @@ namespace MauiAppMain
 
                 UpdateSaveButtonUI(poi);
 
+                UpdateTabTitle();
+
                 PoiContent.CancelAnimations();
 
                 if (!_sheetVisible)
@@ -262,7 +281,7 @@ namespace MauiAppMain
                     _sheetVisible = true;
                 }
                 SinglePoiView.IsVisible = true;
-                PoiListView.IsVisible = false;
+                PoiListContainer.IsVisible = false;
 
                 PoiContent.TranslationY = 10;
 
@@ -290,7 +309,12 @@ namespace MauiAppMain
         private async void OnAllPoiTabClicked(object sender, EventArgs e)
         {
             _currentTab = 0;
-            PoiListView.ItemsSource = _pois;  // All tab luôn bind _pois
+            UpdateTabTitle();
+
+            _displayedPois.Clear();
+            foreach (var poi in _pois)
+                _displayedPois.Add(poi);
+
             await ShowBottomSheet(true);
         }
 
@@ -298,8 +322,12 @@ namespace MauiAppMain
         private async void OnFavoriteTabClicked(object sender, EventArgs e)
         {
             _currentTab = 1;
-            UpdateFavoritesTab();             // đảm bảo _favorites luôn đồng bộ
-            PoiListView.ItemsSource = _favorites;
+            UpdateTabTitle();
+
+            _displayedPois.Clear();
+            foreach (var poi in _favorites)
+                _displayedPois.Add(poi);
+
             await ShowBottomSheet(true);
         }
 
@@ -308,7 +336,7 @@ namespace MauiAppMain
             if (e.PropertyName == nameof(PointOfInterest.IsFavorite))
             {
                 UpdateSaveButtonUI(SelectedPoi); // cập nhật Single POI button
-                UpdateFavoritesTab();            // live update tab Favorites
+                //UpdateFavoritesTab();            // live update tab Favorites
             }
         }
 
@@ -319,8 +347,16 @@ namespace MauiAppMain
             {
                 await ToggleFavorite(poi);
 
+
                 // Update button bottom sheet nếu đang mở
                 UpdateSaveButtonUI(poi);
+            }
+
+            if (_currentTab == 1) // đang ở tab Favorites
+            {
+                _displayedPois.Clear();
+                foreach (var item in _favorites)
+                    _displayedPois.Add(item);
             }
         }
 
@@ -331,23 +367,22 @@ namespace MauiAppMain
 
         }
 
-private void SetSelectedPoi(PointOfInterest poi)
-{
-    // Lấy instance thực trong _pois
-    var realPoi = _pois.FirstOrDefault(p => p.Id == poi.Id);
-    if (realPoi == null) return;
+        private async void OnPoiItemSelected(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.CurrentSelection.FirstOrDefault() is PointOfInterest poi)
+            {
+                // 🔥 Move map tới POI
+                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                    new Location(poi.Latitude, poi.Longitude),
+                    Distance.FromMeters(300)));
 
-    // Hủy sự kiện cũ
-    if (SelectedPoi != null)
-        SelectedPoi.PropertyChanged -= OnPoiSelectionChanged;
+                // 🔥 Mở detail luôn (tuỳ bạn)
+                await ShowPoiWithTransition(poi);
+            }
 
-    SelectedPoi = realPoi;
-
-    // Đăng ký sự kiện mới
-    SelectedPoi.PropertyChanged += OnPoiSelectionChanged;
-
-    UpdateSaveButtonUI(SelectedPoi);
-}
+            // ❗ reset selection để không bị highlight
+            ((CollectionView)sender).SelectedItem = null;
+        }
 
 
         // ---------------GPS / Tracking-----------------------//
@@ -455,51 +490,46 @@ private void SetSelectedPoi(PointOfInterest poi)
         {
             if (poi == null) return;
 
-            // Lấy instance thực trong _pois
             var realPoi = _pois.FirstOrDefault(p => p.Id == poi.Id);
             if (realPoi == null) return;
 
-            // Thay đổi trạng thái
             realPoi.IsFavorite = !realPoi.IsFavorite;
             await _database.UpdatePOIAsync(realPoi);
 
-            // Cập nhật _favorites ngay lập tức
             if (realPoi.IsFavorite)
             {
-                if (!_favorites.Contains(realPoi))
+                if (!_favorites.Any(f => f.Id == realPoi.Id))
                     _favorites.Add(realPoi);
             }
             else
             {
-                if (_favorites.Contains(realPoi))
-                    _favorites.Remove(realPoi);
+                var item = _favorites.FirstOrDefault(f => f.Id == realPoi.Id);
+                if (item != null)
+                    _favorites.Remove(item);
             }
 
-            // Cập nhật nút Save ở POI riêng nếu đang hiển thị
             if (SelectedPoi != null && SelectedPoi.Id == realPoi.Id)
                 UpdateSaveButtonUI(SelectedPoi);
-
-            // Nếu đang ở tab Favorites, ItemsSource giữ nguyên _favorites để layout không bị reset
-            if (_currentTab == 1)
-                PoiListView.ItemsSource = _favorites;
         }
 
-        private void UpdateFavoritesTab()
-        {
-            var favorites = _pois.Where(p => p.IsFavorite).ToList();
+        //private void UpdateFavoritesTab()
+        //{
+        //    var favorites = _pois.Where(p => p.IsFavorite).ToList();
 
-            // Xoá những POI không còn favorite
-            for (int i = _favorites.Count - 1; i >= 0; i--)
-                if (!favorites.Contains(_favorites[i]))
-                    _favorites.RemoveAt(i);
+        //    // Xoá những POI không còn favorite
+        //    for (int i = _favorites.Count - 1; i >= 0; i--)
+        //    {
+        //        if (!favorites.Any(f => f.Id == _favorites[i].Id))
+        //            _favorites.RemoveAt(i);
+        //    }
 
-            // Thêm POI mới
-            foreach (var poi in favorites)
-                if (!_favorites.Contains(poi))
-                    _favorites.Add(poi);
-
-            // ItemsSource của tab Favorites giữ nguyên _favorites
-        }
+        //    // Thêm POI mới
+        //    foreach (var poi in favorites)
+        //    {
+        //        if (!_favorites.Any(f => f.Id == poi.Id))
+        //            _favorites.Add(poi);
+        //    }
+        //}
 
         // Hàm refresh danh sách tab bar
         void RefreshPoiListView()
@@ -531,6 +561,14 @@ private void SetSelectedPoi(PointOfInterest poi)
             {
                 Console.WriteLine($"TTS Error: {ex.Message}");
             }
+        }
+
+        void UpdateTabTitle()
+        {
+            string title = _currentTab == 0 ? "Tất cả POI" : "Yêu thích";
+
+            TabTitleLabel.Text = title;          // list view
+            //SingleTabTitleLabel.Text = title;    // single view
         }
 
 

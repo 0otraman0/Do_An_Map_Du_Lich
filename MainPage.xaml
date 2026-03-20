@@ -141,8 +141,12 @@
                     TranslationY="0"
                     Margin="0,0,0,75">
 
-                    <VerticalStackLayout x:Name="SinglePoiView" IsVisible="True" Spacing="10">
 
+                <VerticalStackLayout x:Name="SinglePoiView" IsVisible="True">
+
+                        <Label x:Name="SingleTabTitleLabel"                          
+                           FontAttributes="Bold"/>    
+                    
                         <Label Text="{Binding SelectedPoi.Name}"
                            FontSize="22"
                            FontAttributes="Bold"
@@ -190,17 +194,20 @@
 
 
                     <!--List Poi-->
+                <VerticalStackLayout x:Name="PoiListContainer" IsVisible="False" Spacing="5">
+                    <Label x:Name="TabTitleLabel"
+                            FontAttributes="Bold"/>
+                    
                     <CollectionView x:Name="PoiListView" 
-                        IsVisible="False" 
-                        SelectionMode="Single"
-                        SelectionChanged="OnPoiSelectionChanged"
+                        SelectionMode="None"
+                        SelectionChanged="OnPoiItemSelected"
                         VerticalOptions="FillAndExpand">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <VerticalStackLayout Padding="0,15" Spacing="10">
 
                                     <CollectionView ItemsSource="{Binding ImageList}" 
-                                HeightRequest="150">
+                                         HeightRequest="150">
                                         <CollectionView.ItemsLayout>
                                             <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10"/>
                                         </CollectionView.ItemsLayout>
@@ -226,13 +233,15 @@
                                                MaxLines="2" />
                                         </VerticalStackLayout>
 
-                                        <ImageButton Grid.Column="1"
-                                             Source="{Binding IsFavorite, Converter={StaticResource FavoriteIconConverter}}"
-                                             WidthRequest="35"
-                                             HeightRequest="35"
-                                             VerticalOptions="Start" />
+                                    <ImageButton Grid.Column="1"
+                                        Source="{Binding IsFavorite, Converter={StaticResource FavoriteIconConverter}}"
+                                        CommandParameter="{Binding .}"
+                                        Clicked="OnFavoriteToggleClicked"
+                                        WidthRequest="35"
+                                        HeightRequest="35"
+                                        VerticalOptions="Start" />
 
-                                        <HorizontalStackLayout Spacing="10"
+                                    <HorizontalStackLayout Spacing="10"
                                            Margin="0,5,0,10"
                                            HorizontalOptions="End">
 
@@ -282,7 +291,7 @@
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
-                
+                </VerticalStackLayout>
                 
             </Grid>
         </Grid>
