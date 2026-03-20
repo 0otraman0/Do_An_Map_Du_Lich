@@ -104,9 +104,9 @@ public class CustomMapHandler : MapHandler
         var bounds = new Android.Graphics.Rect();
         paint.GetTextBounds(text, 0, text.Length, bounds);
 
-        int padding = 20;
-        int width = bounds.Width() + 100;
-        int height = bounds.Height() + padding * 2;
+        int padding = 20; int size = 40; // diameter * 2
+        int width = size;
+        int height = size;
 
         var bitmap = Bitmap.CreateBitmap(width, height, Bitmap.Config.Argb8888);
         var canvas = new Canvas(bitmap);
@@ -115,10 +115,9 @@ public class CustomMapHandler : MapHandler
 
         // Draw small circle icon
         var circlePaint = new Paint { Color = Android.Graphics.Color.Red };
-        canvas.DrawCircle(40, height / 2, 20, circlePaint);
-
+        canvas.DrawCircle(width / 2, height / 2, size / 2, circlePaint);
         // Draw text
-        canvas.DrawText(text, 80, height / 2 + bounds.Height() / 2, paint);
+        //canvas.DrawText(text, 80, height / 2 + bounds.Height() / 2, paint);
 
         return BitmapDescriptorFactory.FromBitmap(bitmap);
     }

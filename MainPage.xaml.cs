@@ -49,7 +49,20 @@ namespace MauiAppMain
                 await DisplayAlert("Permission", "Location permission required", "OK");
                 return;
             }
+            // start tracking user in real-time
+#if ANDROID
+            if (!LocationForegroundService.IsRunning)
+            {
+                var intent = new Android.Content.Intent(
+                Android.App.Application.Context,
+                typeof(LocationForegroundService));
+
+                Android.App.Application.Context.StartForegroundService(intent);
+            }
+#endif
+
             SearchEntry.Text = AppResource.Search_placeholder;
+            
             try
             {
                 await _database.SeedData();
@@ -59,22 +72,10 @@ namespace MauiAppMain
                 {
                     LoadPoisOnMap();
                 }
-                // set the zoom distance of map
                 await ZoomToUserAndFarthestPoi();
-
                 // show map only after zoom is set
                 MyMap.IsVisible = true;
-                // start tracking user in real-time
-#if ANDROID
-                if (!LocationForegroundService.IsRunning)
-                {
-                    var intent = new Android.Content.Intent(
-                    Android.App.Application.Context,
-                    typeof(LocationForegroundService));
-
-                    Android.App.Application.Context.StartForegroundService(intent);
-                }
-                #endif
+                // set the zoom distance of map
             }
             catch (Exception ex)
             {

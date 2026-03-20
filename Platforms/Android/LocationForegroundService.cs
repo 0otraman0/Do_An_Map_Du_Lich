@@ -2,6 +2,7 @@
 using Android.Content;
 using Android.Media;
 using Android.OS;
+using MauiAppMain;
 using MauiAppMain.Models;
 using MauiAppMain.Services;
 using Stream = Android.Media.Stream;
@@ -33,6 +34,28 @@ public class LocationForegroundService : Service
 
         return StartCommandResult.Sticky;
     }
+    
+    Notification CreateNotification()
+    {
+        string channelId = "location_service";
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        {
+            var channel = new NotificationChannel(
+                channelId,
+                "Background Tracking",
+                NotificationImportance.Default);
+
+            var manager = (NotificationManager)GetSystemService(NotificationService);
+            manager.CreateNotificationChannel(channel);
+        }
+
+        return new Notification.Builder(this, channelId)
+            .SetContentTitle("Tour Guide")
+            .SetContentText("Tracking location in background")
+            .SetSmallIcon(Android.Resource.Drawable.IcMenuMyLocation)
+            .Build();
+    }
 
     async Task InitAndStartTracking(CancellationToken token)
     {
@@ -45,6 +68,7 @@ public class LocationForegroundService : Service
         {
             while (!token.IsCancellationRequested)
             {
+                _pois = await database.GetPOIsAsync();
                 var request = new GeolocationRequest(
                     GeolocationAccuracy.High,
                     TimeSpan.FromSeconds(4));
@@ -88,28 +112,6 @@ public class LocationForegroundService : Service
         }
     }
 
-    Notification CreateNotification()
-    {
-        string channelId = "location_service";
-
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-        {
-            var channel = new NotificationChannel(
-                channelId,
-                "Background Tracking",
-                NotificationImportance.Default);
-
-            var manager = (NotificationManager)GetSystemService(NotificationService);
-            manager.CreateNotificationChannel(channel);
-        }
-
-        return new Notification.Builder(this, channelId)
-            .SetContentTitle("Tour Guide")
-            .SetContentText("Tracking location in background")
-            .SetSmallIcon(Android.Resource.Drawable.IcMenuMyLocation)
-            .Build();
-    }
-
     public override void OnDestroy()
     {
         IsRunning = false;
@@ -135,7 +137,9 @@ public class LocationForegroundService : Service
             try
             {
                 // Thử phát âm câu đơn giản nhất, không dùng Options phức tạp
-                await TextToSpeech.Default.SpeakAsync(poi.Description);
+                //await TextToSpeech.Default.SpeakAsync(poi.Description);
+                
+                AndroidTtsService.Speak(poi.Description);
             }
             catch (Exception ex)
             {

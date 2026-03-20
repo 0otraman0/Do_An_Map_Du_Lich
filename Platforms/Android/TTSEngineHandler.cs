@@ -2,19 +2,11 @@
 using global::Android.Content;
 using global::Android.Speech.Tts;
 using Java.Util;
-
+using Locale = Java.Util.Locale;
 using TextToSpeech = global::Android.Speech.Tts.TextToSpeech;
 
 namespace MauiAppMain
 {
-    public class Language
-    {
-        public string country { get; set; } = "US";
-        public string language { get; set; } = "en";
-
-    }
-        
-
 
     public static class AndroidTtsService
     {
@@ -34,11 +26,27 @@ namespace MauiAppMain
         public static void Speak(string text)
         {
             var voices = tts.Voices;
+            var lang = Preferences.Get("App_language", "vi");
+            Locale locale;
 
-            foreach (var voice in voices)
+            switch (lang)
             {
-                System.Diagnostics.Debug.WriteLine(voice.Locale);
+                case "vi":
+                    locale = new Locale("vi", "VN");
+                    break;
+
+                case "ja":
+                    locale = new Locale("ja", "JP");
+                    break;
+
+                case "en":
+                default:
+                    locale = Locale.Us;
+                    break;
             }
+            var result = tts.SetLanguage(locale);
+
+            
 
             if (tts == null)
                 return;
@@ -51,7 +59,7 @@ namespace MauiAppMain
             //tts.SetLanguage(Java.Util.Locale.VietNamese);
 
             queueCount++;
-
+            Console.WriteLine(locale);
             tts.Speak(text, QueueMode.Add, null, "poiSpeech");
         }
 
