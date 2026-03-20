@@ -158,7 +158,7 @@ namespace MauiAppMain
 
 
         // ---------------Database / Seed / Load POIs-----------------------//
-        //lưu dữ liệu pin trên bản đồ
+        // hàm này sẽ chạy một lần khi app mới cài đặt, để tạo sẵn vài POI mẫu. Nếu đã có dữ liệu rồi thì nó sẽ tự động bỏ qua
         async Task SeedData()
         {
             await _database.Init();
@@ -191,6 +191,7 @@ namespace MauiAppMain
             foreach (var poi in initialPois) await _database.AddPOIAsync(poi);
         }
 
+        // hàm này sẽ load tất cả POI từ database vào _pois, sau đó gọi LoadPoisOnMap để hiển thị lên map. Hàm này chạy nền khi app khởi động
         private async Task LoadPoisAsync()
         {
             var list = await _database.GetPOIsAsync();  // list từ DB
@@ -202,6 +203,8 @@ namespace MauiAppMain
 
 
         // ---------------Map & Pin logic-----------------------//
+        // hàm này sẽ chạy sau khi đã load xong POI từ database vào _pois, nó sẽ tạo Pin cho từng POI và thêm vào map.
+        // Đồng thời lưu mapping giữa Pin và POI vào _pinPoiMap để sau này dễ tìm khi click vào Pin
         void LoadPoisOnMap()
         {
 
@@ -225,6 +228,7 @@ namespace MauiAppMain
             }
         }
 
+        // khi click vào Pin, sẽ tìm POI tương ứng qua _pinPoiMap rồi gọi hàm ShowPoiWithTransition để hiển thị detail
         async void OnPinClicked(object sender, PinClickedEventArgs e)
         {
             e.HideInfoWindow = true;
