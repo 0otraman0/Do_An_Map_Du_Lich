@@ -12,7 +12,7 @@ public class LocationForegroundService : Service
     public static bool IsRunning = false;
     private readonly DatabaseService database = new DatabaseService();
     private List<PointOfInterest> _pois = new();
-    private PointOfInterest? _lastSpokenPoi;
+    private Dictionary<int, DateTime> _poiLastSpoken = new();
 
     CancellationTokenSource _cts;
 
@@ -61,11 +61,17 @@ public class LocationForegroundService : Service
 
                         double meters = distance * 1000;
 
-                        if (meters < 50 && _lastSpokenPoi != poi)
+                        if (meters < 50)
                         {
-                            _lastSpokenPoi = poi;
+                            if (_poiLastSpoken.TryGetValue(poi.Id, out var lastSpoken))
+                            {
+                                if ((DateTime.Now - lastSpoken).TotalMinutes < 1)
+                                    continue; // skip recently spoken POIs
+                            }
+
+                            _poiLastSpoken[poi.Id] = DateTime.Now;
                             _ = SpeakPoiDescription(poi);
-                            break;
+                            break; // only speak one per loop
                         }
                     }
                 }
