@@ -443,6 +443,8 @@ namespace MauiAppMain
 
 
         // ---------------Utility / Helpers-----------------------//
+        // hàm này sẽ ẩn hoặc hiện các thành phần UI như Tab Bar, Search Bar,... khi click vào map.
+        // Khi ẩn, nó sẽ fade out dần và chặn tương tác, khi hiện lại thì fade in.
         private async Task SetUIVisibility(bool isVisible)
         {
             if (_isUiVisible == isVisible) return;
@@ -492,7 +494,7 @@ namespace MauiAppMain
         }
 
 
-        //bật/tắt trạng thái Save (Favorite) của một POI, lưu vào database, và cập nhật lại UI
+        // hàm này sẽ toggle trạng thái yêu thích của POI, cập nhật vào database, đồng thời thêm/xóa khỏi danh sách _favorites và cập nhật UI tương ứng
         private async Task ToggleFavorite(PointOfInterest poi)
         {
             if (poi == null) return;
@@ -519,26 +521,8 @@ namespace MauiAppMain
                 UpdateSaveButtonUI(SelectedPoi);
         }
 
-        //private void UpdateFavoritesTab()
-        //{
-        //    var favorites = _pois.Where(p => p.IsFavorite).ToList();
-
-        //    // Xoá những POI không còn favorite
-        //    for (int i = _favorites.Count - 1; i >= 0; i--)
-        //    {
-        //        if (!favorites.Any(f => f.Id == _favorites[i].Id))
-        //            _favorites.RemoveAt(i);
-        //    }
-
-        //    // Thêm POI mới
-        //    foreach (var poi in favorites)
-        //    {
-        //        if (!_favorites.Any(f => f.Id == poi.Id))
-        //            _favorites.Add(poi);
-        //    }
-        //}
-
-        // Hàm refresh danh sách tab bar
+        // hàm này sẽ cập nhật lại danh sách hiển thị trên ListView khi toggle tab hoặc khi có thay đổi yêu thích, nó sẽ đổ dữ liệu từ _pois
+        // hoặc _favorites vào _displayedPois tuỳ tab nào đang active, rồi ListView sẽ tự động cập nhật vì đã bind với _displayedPois
         void RefreshPoiListView()
         {
             PoiListView.ItemsSource = _currentTab == 0 ? _pois : _favorites;
@@ -580,6 +564,7 @@ namespace MauiAppMain
 
 
         // ---------------????-----------------------//
+        // hàm này sẽ được gọi khi click vào menu (nếu bạn có), nó sẽ điều hướng đến trang cài đặt. Bạn cần tạo file SettingPage.xaml để nó hoạt động
         public async void OnMenuClicked(object sender, EventArgs e)
         {
             try
@@ -594,7 +579,7 @@ namespace MauiAppMain
             }
         }
 
-
+        // logic kéo thả bottom sheet
         private async void OnSheetPanUpdated(object sender, PanUpdatedEventArgs e)
         {
             switch (e.StatusType)
