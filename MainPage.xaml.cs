@@ -13,12 +13,15 @@ namespace MauiAppMain
     {
         //DATABASE & DATA
         private readonly DatabaseService _database;
+        // danh sách POI chính, luôn chứa tất cả POI. Khi load từ DB thì đổ vào đây, khi toggle favorite
+        // thì chỉ cập nhật IsFavorite trong item của _pois, chứ không xóa hẳn khỏi đây
         private ObservableCollection<PointOfInterest> _pois = new ObservableCollection<PointOfInterest>();
+        // để lưu mapping giữa Pin trên map và POI tương ứng, giúp dễ dàng tìm POI khi click vào Pin
         private Dictionary<Pin, PointOfInterest> _pinPoiMap = new();
+        // danh sách POI yêu thích, dùng để hiển thị ở tab Favorites. Khi toggle favorite thì thêm/xóa item trong này, chứ không xóa hẳn khỏi _pois
         private ObservableCollection<PointOfInterest> _favorites = new ObservableCollection<PointOfInterest>();
-        private ObservableCollection<PointOfInterest> _displayedPois = new();
-
-
+        // dùng chung cho cả 2 tab, khi click tab nào thì đổ dữ liệu tương ứng vào đây rồi bind lên ListView
+        private ObservableCollection<PointOfInterest> _displayedPois = new(); 
 
 
         //UI STATE
