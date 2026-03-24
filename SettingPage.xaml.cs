@@ -7,12 +7,14 @@ namespace MauiAppMain;
 
 public partial class SettingPage : ContentPage
 {
-    DatabaseService database;
+    private readonly DatabaseService database;
+    private readonly DataFetch dataFetch;
 
-    public SettingPage()
+    public SettingPage(DataFetch dataFetch, DatabaseService database)
     {
         InitializeComponent();
-        database = new DatabaseService();
+        this.dataFetch = dataFetch;
+        this.database = database;
     }
     protected override async void OnAppearing()
     {
@@ -33,7 +35,7 @@ public partial class SettingPage : ContentPage
 
         LanguageList.ItemsSource = languages;
     }
-    void OnLanguageSelected(object sender, SelectionChangedEventArgs e)
+    async void OnLanguageSelected(object sender, SelectionChangedEventArgs e)
     {
         if (e.CurrentSelection.FirstOrDefault() is not Language_option lang)
             return;
@@ -44,35 +46,17 @@ public partial class SettingPage : ContentPage
         // hide list
         LanguageList.IsVisible = false;
 
-        // change language
+        // STEP 1: Save language TEMPORARILY (for API call)
+        Preferences.Set("App_language", lang.Code);
+
+        // STEP 2: Fetch data FIRST if the language data is not available
+        if(!await database.IsLanguageDataAvailable(lang.Code))
+            await dataFetch.FetchData(true);
+
+        // STEP 3: NOW apply language + reload UI
         LanguageService.SetLanguage(lang.Code);
     }
 
-
-    //async void OnLanguageButtonTapped(object sender, EventArgs e)
-    //{
-    //    if (!LanguageList.IsVisible)
-    //    {
-    //        LanguageList.IsVisible = true;
-
-    //        LanguageList.Opacity = 0;
-    //        LanguageList.Scale = 0.95;
-
-    //        await Task.WhenAll(
-    //            LanguageList.FadeTo(1, 400, Easing.CubicOut),
-    //            LanguageList.ScaleTo(1, 400, Easing.CubicOut)
-    //        );
-    //    }
-    //    else
-    //    {
-    //        await Task.WhenAll(
-    //            LanguageList.FadeTo(0, 450, Easing.CubicIn),
-    //            LanguageList.ScaleTo(0.95, 650, Easing.CubicIn)
-    //        );
-
-    //        LanguageList.IsVisible = false;
-    //    }
-    //}
     async void OnLanguageButtonTapped(object sender, EventArgs e)
     {
         if (LanguageContainer.HeightRequest == 0)

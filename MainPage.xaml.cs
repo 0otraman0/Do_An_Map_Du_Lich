@@ -10,6 +10,7 @@ namespace MauiAppMain
     {
         private readonly DatabaseService _database;
         private readonly LanguageService _languageService;
+        private readonly DataFetch _dataFetch;
         private List<PointOfInterest> _pois = new();
         private bool _mapInitialized = false;
         private bool _sheetVisible = false;
@@ -31,16 +32,18 @@ namespace MauiAppMain
             }
         }
 
-        public MainPage(DatabaseService database)
+        public MainPage(DatabaseService database, DataFetch dataFetch)
         {
             InitializeComponent();
             _database = database;
             BindingContext = this;
             LanguageService.LoadSavedLanguage(); // Mặc định là tiếng Việt, bạn có thể thay đổi theo ý muốn
+            _dataFetch = dataFetch;
         }
         protected override async void OnAppearing()
         {
             base.OnAppearing();
+            SearchEntry.Text = AppResource.Search_placeholder;
 
             var status = await Permissions.RequestAsync<Permissions.LocationAlways>();
 
@@ -50,7 +53,7 @@ namespace MauiAppMain
                 return;
             }
             // start tracking user in real-time
-#if ANDROID
+            #if ANDROID
             if (!LocationForegroundService.IsRunning)
             {
                 var intent = new Android.Content.Intent(
@@ -59,13 +62,10 @@ namespace MauiAppMain
 
                 Android.App.Application.Context.StartForegroundService(intent);
             }
-#endif
-
-            SearchEntry.Text = AppResource.Search_placeholder;
-            
+            #endif
             try
             {
-                await _database.SeedData();
+                //await _database.SeedData();
                 _pois = await _database.GetPOIsAsync();
 
                 if (_pois.Count > 0)
@@ -89,7 +89,7 @@ namespace MauiAppMain
             try
             {
                 // Chắc chắn rằng bạn đã tạo file SettingPage.xaml
-                await Navigation.PushAsync(new SettingPage());
+                await Navigation.PushAsync(new SettingPage(_dataFetch, _database));
             }
             catch (Exception ex)
             {
@@ -144,26 +144,6 @@ namespace MauiAppMain
             }
 
         }
-        public async Task SpeakPoiDescription(PointOfInterest poi)
-        {
-            if (poi == null || string.IsNullOrWhiteSpace(poi.Description) || Preferences.Get("SoundPlayWhenClickedPOI", false) == false) return;
-
-            // Ép chạy trên luồng giao diện (Main Thread)
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                try
-                {
-                    // Thử phát âm câu đơn giản nhất, không dùng Options phức tạp
-                    await TextToSpeech.Default.SpeakAsync(poi.Description);
-                }
-                catch (Exception ex)
-                {
-                    // Nếu có lỗi, nó sẽ hiện thông báo lên màn hình cho bạn biết
-                    await Shell.Current.DisplayAlert("Lỗi TTS", ex.Message, "OK");
-                }
-            });
-        }
-
         // --- BOTTOM SHEET ANIMATION ---
         async Task HideBottomSheet()
         {

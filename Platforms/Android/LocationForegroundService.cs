@@ -22,14 +22,14 @@ public class LocationForegroundService : Service
     public override StartCommandResult OnStartCommand(Intent intent, StartCommandFlags flags, int startId)
     {
         if (IsRunning)
-            return StartCommandResult.Sticky;
-
+            return StartCommandResult.NotSticky;
         IsRunning = true;
 
-        StartForeground(1001, CreateNotification());
+        StartForeground(1, CreateNotification());
 
         _cts = new CancellationTokenSource();
         _ = InitAndStartTracking(_cts.Token);
+        Task.Delay(10000); // wait for map to render
         _ = StartTracking(_cts.Token);
 
         return StartCommandResult.Sticky;
@@ -68,7 +68,6 @@ public class LocationForegroundService : Service
         {
             while (!token.IsCancellationRequested)
             {
-                _pois = await database.GetPOIsAsync();
                 var request = new GeolocationRequest(
                     GeolocationAccuracy.High,
                     TimeSpan.FromSeconds(4));
@@ -152,5 +151,13 @@ public class LocationForegroundService : Service
                 audioManager.AbandonAudioFocus(null);
             }
         });
+    }
+
+    public override void OnTaskRemoved(Intent rootIntent)
+    {
+        StopForeground(true);
+        Console.WriteLine("DEBUG: Service is stopping due to task removal.");
+        StopSelf();
+        base.OnTaskRemoved(rootIntent);
     }
 }
