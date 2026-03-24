@@ -126,4 +126,7 @@
   <data name="Sound_setting_button" xml:space="preserve">
     <value>興味のある場所を通過すると音が鳴る</value>
   </data>
+  <data name="Volumn_bar" xml:space="preserve">
+    <value>..</value>
+  </data>
 </root>

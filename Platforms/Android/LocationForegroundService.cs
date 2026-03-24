@@ -2,6 +2,7 @@
 using Android.Content;
 using Android.Media;
 using Android.OS;
+using MauiAppMain;
 using MauiAppMain.Models;
 using MauiAppMain.Services;
 using Stream = Android.Media.Stream;
@@ -12,7 +13,7 @@ public class LocationForegroundService : Service
     public static bool IsRunning = false;
     private readonly DatabaseService database = new DatabaseService();
     private List<PointOfInterest> _pois = new();
-    private PointOfInterest? _lastSpokenPoi;
+    private Dictionary<int, DateTime> _poiLastSpoken = new();
 
     CancellationTokenSource _cts;
 
@@ -21,17 +22,39 @@ public class LocationForegroundService : Service
     public override StartCommandResult OnStartCommand(Intent intent, StartCommandFlags flags, int startId)
     {
         if (IsRunning)
-            return StartCommandResult.Sticky;
-
+            return StartCommandResult.NotSticky;
         IsRunning = true;
 
-        StartForeground(1001, CreateNotification());
+        StartForeground(1, CreateNotification());
 
         _cts = new CancellationTokenSource();
         _ = InitAndStartTracking(_cts.Token);
+        Task.Delay(10000); // wait for map to render
         _ = StartTracking(_cts.Token);
 
         return StartCommandResult.Sticky;
+    }
+    
+    Notification CreateNotification()
+    {
+        string channelId = "location_service";
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        {
+            var channel = new NotificationChannel(
+                channelId,
+                "Background Tracking",
+                NotificationImportance.Default);
+
+            var manager = (NotificationManager)GetSystemService(NotificationService);
+            manager.CreateNotificationChannel(channel);
+        }
+
+        return new Notification.Builder(this, channelId)
+            .SetContentTitle("Tour Guide")
+            .SetContentText("Tracking location in background")
+            .SetSmallIcon(Android.Resource.Drawable.IcMenuMyLocation)
+            .Build();
     }
 
     async Task InitAndStartTracking(CancellationToken token)
@@ -61,11 +84,17 @@ public class LocationForegroundService : Service
 
                         double meters = distance * 1000;
 
-                        if (meters < 50 && _lastSpokenPoi != poi)
+                        if (meters < 50)
                         {
-                            _lastSpokenPoi = poi;
+                            if (_poiLastSpoken.TryGetValue(poi.Id, out var lastSpoken))
+                            {
+                                if ((DateTime.Now - lastSpoken).TotalMinutes < 1)
+                                    continue; // skip recently spoken POIs
+                            }
+
+                            _poiLastSpoken[poi.Id] = DateTime.Now;
                             _ = SpeakPoiDescription(poi);
-                            break;
+                            break; // only speak one per loop
                         }
                     }
                 }
@@ -80,28 +109,6 @@ public class LocationForegroundService : Service
         {
             System.Diagnostics.Debug.WriteLine(ex);
         }
-    }
-
-    Notification CreateNotification()
-    {
-        string channelId = "location_service";
-
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
-        {
-            var channel = new NotificationChannel(
-                channelId,
-                "Background Tracking",
-                NotificationImportance.Default);
-
-            var manager = (NotificationManager)GetSystemService(NotificationService);
-            manager.CreateNotificationChannel(channel);
-        }
-
-        return new Notification.Builder(this, channelId)
-            .SetContentTitle("Tour Guide")
-            .SetContentText("Tracking location in background")
-            .SetSmallIcon(Android.Resource.Drawable.IcMenuMyLocation)
-            .Build();
     }
 
     public override void OnDestroy()
@@ -129,7 +136,9 @@ public class LocationForegroundService : Service
             try
             {
                 // Thử phát âm câu đơn giản nhất, không dùng Options phức tạp
-                await TextToSpeech.Default.SpeakAsync(poi.Description);
+                //await TextToSpeech.Default.SpeakAsync(poi.Description);
+                
+                AndroidTtsService.Speak(poi.Description);
             }
             catch (Exception ex)
             {
@@ -142,5 +151,13 @@ public class LocationForegroundService : Service
                 audioManager.AbandonAudioFocus(null);
             }
         });
+    }
+
+    public override void OnTaskRemoved(Intent rootIntent)
+    {
+        StopForeground(true);
+        Console.WriteLine("DEBUG: Service is stopping due to task removal.");
+        StopSelf();
+        base.OnTaskRemoved(rootIntent);
     }
 }

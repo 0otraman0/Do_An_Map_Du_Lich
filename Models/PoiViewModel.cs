@@ -1,23 +1,25 @@
 ﻿using SQLite;
-using System.Text.Json.Serialization;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace MauiAppMain.Models
 {
-    public class Poi
+    public class PointOfInterest
     {
-        [PrimaryKey]
-        [JsonPropertyName("PoiId")]
-        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-
+        [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public double Latitude { get; set; } = 0;
         public double Longitude { get; set; } = 0;
-        [JsonPropertyName("Radius")]
         public double RadiusMeters { get; set; } = 0;
         public bool IsTriggered { get; set; } = false;
-        public string ImageUrlsJson { get; set; }
-        public string isFavorite { get; set; } = "false";
-        public bool IsDeleted { get; set; }
+        public string ImageUrlsJson { get; set; } = string.Empty;
+        public int priorityLevel {  get; set; } = 1;
 
         [Ignore] // Không lưu cột này vào DB, chỉ dùng để hiển thị
         public List<string> ImageList => string.IsNullOrEmpty(ImageUrlsJson)

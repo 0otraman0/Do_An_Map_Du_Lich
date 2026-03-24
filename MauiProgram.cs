@@ -1,8 +1,8 @@
-﻿using MauiAppMain.Services;
+﻿using MauiAppMain.Resources.Localization;
+using MauiAppMain.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Maps.Handlers;
 using System.Globalization;
-using MauiAppMain.Resources.Localization;
 namespace MauiAppMain
 {
     public static class MauiProgram
@@ -31,10 +31,15 @@ namespace MauiAppMain
                     {
                         map.UiSettings.MyLocationButtonEnabled = false;
                     }));
-                #endif
+#endif
                 });
             builder.Services.AddSingleton<DatabaseService>();
-            
+            builder.Services.AddSingleton<DataFetch>();
+            builder.Services.AddSingleton<HttpClient>();
+#if ANDROID
+
+            builder.Services.AddSingleton<IDeviceInfoService, DeviceInfoService>();
+#endif
 
 #if DEBUG
             builder.Logging.AddDebug();

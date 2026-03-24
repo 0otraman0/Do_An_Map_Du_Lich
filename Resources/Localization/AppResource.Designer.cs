@@ -86,5 +86,14 @@ namespace MauiAppMain.Resources.Localization {
                 return ResourceManager.GetString("Sound_setting_button", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sound volumn.
+        /// </summary>
+        public static string Volumn_bar {
+            get {
+                return ResourceManager.GetString("Volumn_bar", resourceCulture);
+            }
+        }
     }
 }

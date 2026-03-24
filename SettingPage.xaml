@@ -120,6 +120,7 @@
             VerticalOptions="Center"/>
 
         </HorizontalStackLayout>
+        
     </VerticalStackLayout>
 
 </ContentPage>

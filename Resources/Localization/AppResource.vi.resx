@@ -126,4 +126,7 @@
   <data name="Sound_setting_button" xml:space="preserve">
     <value>Phát âm thanh khi đi ngang qua điểm tham quan</value>
   </data>
+  <data name="Volumn_bar" xml:space="preserve">
+    <value>âm lượng</value>
+  </data>
 </root>
