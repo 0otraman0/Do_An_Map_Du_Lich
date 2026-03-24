@@ -156,7 +156,21 @@
                            FontSize="15"
                            TextColor="#444444" />
 
-                        <CollectionView ItemsSource="{Binding SelectedPoi.ImageList}" HeightRequest="200" SelectionMode="None">
+                    <!-- 🔊 AUDIO BAR (THÊM Ở ĐÂY) -->
+                    <HorizontalStackLayout Spacing="10" Margin="0,10,0,10">
+
+                        <Button x:Name="AudioBtn"
+                            Text="▶ Phát audio"
+                            Clicked="OnAudioToggleClicked"
+                            BackgroundColor="#E3F2FD"
+                            TextColor="#1976D2"
+                            CornerRadius="25"
+                            HeightRequest="40"
+                            Padding="15,0"/>
+
+                    </HorizontalStackLayout>
+
+                    <CollectionView ItemsSource="{Binding SelectedPoi.ImageList}" HeightRequest="200" SelectionMode="None">
                             <CollectionView.ItemsLayout>
                                 <LinearItemsLayout Orientation="Horizontal" ItemSpacing="10"/>
                             </CollectionView.ItemsLayout>

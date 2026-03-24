@@ -31,6 +31,7 @@ namespace MauiAppMain
         private bool _sheetVisible = false;
         private bool _isUiVisible = true;
         private int _currentTab = 0; // 0 = All, 1 = Favorites
+        private bool _isPlaying = false;
 
 
         // BOTTOM SHEET
@@ -301,12 +302,71 @@ namespace MauiAppMain
                 if (_lastSpokenPoi != poi)
                 {
                     _lastSpokenPoi = poi;
-                    _ = SpeakPoiDescription(poi);
+                    //_ = SpeakPoiDescription(poi);
                 }
             }
             finally
             {
                 _isPoiTransitionRunning = false;
+            }
+        }
+
+        private async Task PlayAudio()
+        {
+            if (SelectedPoi == null) return;
+
+            try
+            {
+                await SpeakPoiDescription(SelectedPoi);
+            }
+            finally
+            {
+                // ✅ luôn reset dù có lỗi hay không
+                _isPlaying = false;
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    AudioBtn.Text = "▶ Phát audio";
+                    AudioBtn.BackgroundColor = Color.FromArgb("#E3F2FD");
+                    AudioBtn.TextColor = Color.FromArgb("#1976D2");
+                });
+            }
+        }
+
+        private void StopAudio()
+        {
+            _ttsCts?.Cancel();
+
+            _isPlaying = false;
+
+            AudioBtn.Text = "▶ Phát audio";
+            AudioBtn.BackgroundColor = Color.FromArgb("#E3F2FD");
+            AudioBtn.TextColor = Color.FromArgb("#1976D2");
+        }
+
+        private async void OnAudioToggleClicked(object sender, EventArgs e)
+        {
+            if (!_isPlaying)
+            {
+                // PLAY
+                _isPlaying = true;
+
+                AudioBtn.Text = "⏹ Dừng";
+                AudioBtn.BackgroundColor = Color.FromArgb("#F0F0F0");
+                AudioBtn.TextColor = Colors.Black;
+
+                await PlayAudio(); // gọi lại hàm cũ của bạn
+            }
+            else
+            {
+                // STOP
+                _isPlaying = false;
+
+                AudioBtn.Text = "▶ Phát audio";
+                AudioBtn.BackgroundColor = Color.FromArgb("#E3F2FD");
+                AudioBtn.TextColor = Color.FromArgb("#1976D2");
+
+                StopAudio(); // gọi lại hàm cũ của bạn
             }
         }
 
@@ -436,6 +496,8 @@ namespace MauiAppMain
                 {
                     _lastSpokenPoi = poi;
                     _ = SpeakPoiDescription(poi);
+
+
                     break;
                 }
             }
