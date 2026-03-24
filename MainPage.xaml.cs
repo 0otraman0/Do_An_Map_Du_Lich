@@ -10,6 +10,39 @@ namespace MauiAppMain
     {
         private readonly DatabaseService _database;
         private readonly LanguageService _languageService;
+<<<<<<< HEAD
+        private List<PointOfInterest> _pois = new();
+        private bool _mapInitialized = false;
+        private bool _sheetVisible = false;
+        private double SheetHiddenY = 500;
+        private double SheetVisibleY = 0;
+        private PointOfInterest? _selectedPoi;
+        private PointOfInterest? _lastSpokenPoi;
+        private CancellationTokenSource? _cts;
+
+        double _startY;
+
+        public PointOfInterest? SelectedPoi
+        {
+            get => _selectedPoi;
+            set
+            {
+                _selectedPoi = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public MainPage(DatabaseService database)
+        {
+            InitializeComponent();
+            _database = database;
+            BindingContext = this;
+            LanguageService.LoadSavedLanguage(); // Mặc định là tiếng Việt, bạn có thể thay đổi theo ý muốn
+        }
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+=======
         private readonly DataFetch _dataFetch;
         private List<PointOfInterest> _pois = new();
         private bool _mapInitialized = false;
@@ -44,6 +77,7 @@ namespace MauiAppMain
         {
             base.OnAppearing();
             SearchEntry.Text = AppResource.Search_placeholder;
+>>>>>>> 216cc9c179426402c6f15ee2769a9b0f394aa631
 
             var status = await Permissions.RequestAsync<Permissions.LocationAlways>();
 
@@ -52,6 +86,21 @@ namespace MauiAppMain
                 await DisplayAlert("Permission", "Location permission required", "OK");
                 return;
             }
+<<<<<<< HEAD
+            SearchEntry.Text = AppResource.Search_placeholder;
+            try
+            {
+                await SeedData();
+                _pois = await _database.GetPOIsAsync();
+
+                if (_pois.Count > 0)
+                {
+                    LoadPoisOnMap();
+                }
+                // set the zoom distance of map
+                await ZoomToUserAndFarthestPoi();
+
+=======
             // start tracking user in real-time
             #if ANDROID
             if (!LocationForegroundService.IsRunning)
@@ -73,10 +122,146 @@ namespace MauiAppMain
                     LoadPoisOnMap();
                 }
                 await ZoomToUserAndFarthestPoi();
+>>>>>>> 216cc9c179426402c6f15ee2769a9b0f394aa631
                 // show map only after zoom is set
                 MyMap.IsVisible = true;
                 // set the zoom distance of map
             }
+<<<<<<< HEAD
+            catch (Exception ex)
+            {
+                Console.WriteLine($"DEBUG LỖI: {ex.Message}");
+            }
+        }
+
+        // ☰ HÀM XỬ LÝ MENU (Sửa lỗi "Not Found")
+        public async void OnMenuClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                // Chắc chắn rằng bạn đã tạo file SettingPage.xaml
+                await Navigation.PushAsync(new SettingPage());
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Lỗi", "Không thể mở trang cài đặt. Hãy đảm bảo SettingPage đã tồn tại.", "OK");
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        void LoadPoisOnMap()
+        {
+            MyMap.Pins.Clear();
+            foreach (var poi in _pois)
+            {
+                var pin = new Pin
+                {
+                    Label = poi.Name,
+                    Address = poi.Description,
+                    Location = new Location(poi.Latitude, poi.Longitude)
+                };
+
+                pin.MarkerClicked += async (s, e) =>
+                {
+                    e.HideInfoWindow = true; // Ẩn info window mặc định
+                    await ShowPoiWithTransition(poi);
+                };
+
+                MyMap.Pins.Add(pin);
+            }
+        }
+
+        async Task ShowPoiWithTransition(PointOfInterest poi)
+        {
+            SelectedPoi = poi;
+
+            if (!_sheetVisible)
+            {
+                await ShowBottomSheet();
+                await Task.WhenAll(
+                    PoiContent.FadeTo(1, 180, Easing.CubicOut),
+                    PoiContent.TranslateTo(0, 0, 180, Easing.CubicOut)
+                );
+            }
+            else
+            {
+                await PoiContent.FadeTo(0, 120);
+                PoiContent.TranslationY = 10;
+                await Task.Delay(30);
+                await Task.WhenAll(
+                    PoiContent.FadeTo(1, 180, Easing.CubicOut),
+                    PoiContent.TranslateTo(0, 0, 180, Easing.CubicOut)
+                );
+            }
+
+            // Phát âm thanh mô tả
+            // Nếu cài đặt cho phép
+            //if (Preferences.Get("SoundPlayWhenClickedPOI", false) == true)
+            //{
+            //    await SpeakPoiDescription(poi);
+            //}
+        }
+        public async Task SpeakPoiDescription(PointOfInterest poi)
+        {
+            if (poi == null || string.IsNullOrWhiteSpace(poi.Description) || Preferences.Get("SoundPlayWhenClickedPOI", false) == false) return;
+
+            // Ép chạy trên luồng giao diện (Main Thread)
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                try
+                {
+                    // Thử phát âm câu đơn giản nhất, không dùng Options phức tạp
+                    await TextToSpeech.Default.SpeakAsync(poi.Description);
+                }
+                catch (Exception ex)
+                {
+                    // Nếu có lỗi, nó sẽ hiện thông báo lên màn hình cho bạn biết
+                    await Shell.Current.DisplayAlert("Lỗi TTS", ex.Message, "OK");
+                }
+            });
+        }
+
+        // --- GPS TRACKING LOGIC ---
+        //async void StartTracking()
+        //{
+        //    if (await Permissions.RequestAsync<Permissions.LocationWhenInUse>() != PermissionStatus.Granted)
+        //        return;
+
+        //    _cts = new CancellationTokenSource();
+        //    try
+        //    {
+        //        while (!_cts.Token.IsCancellationRequested)
+        //        {
+        //            var request = new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(4));
+        //            var location = await Geolocation.GetLocationAsync(request, _cts.Token);
+
+        //            if (location != null)
+        //            {
+        //                // Kiểm tra khoảng cách để tự động đọc audio khi đi ngang qua
+        //                foreach (var poi in _pois)
+        //                {
+        //                    // Sử dụng hàm CalculateDistance có sẵn của đối tượng Location
+        //                    double distance = location.CalculateDistance(new Location(poi.Latitude, poi.Longitude), DistanceUnits.Kilometers);
+
+        //                    // Vì kết quả trả về là Kilometers, ta nhân với 1000 để ra Meters
+        //                    double distanceInMeters = distance * 1000;
+
+        //                    if (distanceInMeters < 50 && _lastSpokenPoi != poi)
+        //                    {
+        //                        _lastSpokenPoi = poi;
+        //                        _ = SpeakPoiDescription(poi);
+        //                        break;
+        //                    }
+        //                }
+        //            }
+        //            await Task.Delay(4000, _cts.Token);
+        //        }
+        //    }
+        //    catch { }
+        //}
+
+        // --- BOTTOM SHEET ANIMATION ---
+=======
             catch (Exception ex)
             {
                 Console.WriteLine($"DEBUG LỖI: {ex.Message}");
@@ -145,6 +330,7 @@ namespace MauiAppMain
 
         }
         // --- BOTTOM SHEET ANIMATION ---
+>>>>>>> 216cc9c179426402c6f15ee2769a9b0f394aa631
         async Task HideBottomSheet()
         {
             PoiSheet.CancelAnimations();
@@ -188,6 +374,67 @@ namespace MauiAppMain
                     }
                     break; ;
             }
+<<<<<<< HEAD
+        }
+
+        //lưu dữ liệu pin trên bản đồ
+        async Task SeedData()
+        {
+            // kiểm tra dữ liệu POI đã tồn tại chưa, nếu chưa thì thêm vào
+            await _database.Init();
+            var existing = await _database.GetPOIsAsync();
+            if (existing.Count == 0)
+            {
+                var imageList1 = new List<string> { "school_1.jpg", "school_2.jpg", "school_3.jpg" };
+                var imageList2 = new List<string> { "cafe_1.jpg", "cafe_2.jpg" };
+
+                var initialPois = new List<PointOfInterest>
+                {
+                    new PointOfInterest
+                    {
+                    Name = "Trường học",
+                    Description = "Trường học là nơi tôi được học.",
+                    Latitude = 10.759893,
+                    Longitude = 106.679930,
+                    ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList1)
+                    },
+                    new PointOfInterest
+                    {
+                    Name = "Quán Cà Phê",
+                    Description = "Cà phê ngon nhất ở đây.",
+                    Latitude = 10.759548,
+                    Longitude = 106.679105,
+                    ImageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageList2)
+                    }
+                };
+                foreach (var poi in initialPois) await _database.AddPOIAsync(poi);
+            }
+            // kiểm tra dữ liệu ngôn ngữ đã tồn tại chưa, nếu chưa thì thêm vào
+            var existing_lang = await _database.GetLanguagesAsync();
+            if (existing_lang.Count == 0)
+            {
+                var initialLanguage = new List<Language_option>
+                {
+                    new Language_option
+                    {
+                        Code = "en",
+                        Language = "English"
+                    },
+                    new Language_option
+                    {
+                        Code = "vi",
+                        Language = "Tiếng Việt"
+                    },
+                    new Language_option
+                    {
+                        Code = "ja",
+                        Language = "日本語"
+                    }
+                };
+                foreach (var lang in initialLanguage) await _database.AddLanguageAsync(lang);
+            }
+=======
+>>>>>>> 216cc9c179426402c6f15ee2769a9b0f394aa631
         }
         private async void OnSearchTapped(object sender, EventArgs e)
         {
