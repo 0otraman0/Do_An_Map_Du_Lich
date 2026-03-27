@@ -34,7 +34,7 @@ namespace MauiAppMain
         private bool _isUiVisible = true;
         private int _currentTab = 0; // 0 = All, 1 = Favorites
         private bool _isPlaying = false;
-        private bool _isTimerRunning = false;
+        //private bool _isTimerRunning = false;
         private int _audioSessionId = 0;
 
 
