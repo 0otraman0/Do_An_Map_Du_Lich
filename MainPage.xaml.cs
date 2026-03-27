@@ -4,6 +4,7 @@ using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 
 
 
@@ -21,7 +22,8 @@ namespace MauiAppMain
         // danh sách POI yêu thích, dùng để hiển thị ở tab Favorites. Khi toggle favorite thì thêm/xóa item trong này, chứ không xóa hẳn khỏi _pois
         private ObservableCollection<PointOfInterest> _favorites = new ObservableCollection<PointOfInterest>();
         // dùng chung cho cả 2 tab, khi click tab nào thì đổ dữ liệu tương ứng vào đây rồi bind lên ListView
-        private ObservableCollection<PointOfInterest> _displayedPois = new(); 
+        private ObservableCollection<PointOfInterest> _displayedPois = new();
+        private CancellationTokenSource _timerCts;
 
 
         //UI STATE
@@ -32,6 +34,9 @@ namespace MauiAppMain
         private bool _isUiVisible = true;
         private int _currentTab = 0; // 0 = All, 1 = Favorites
         private bool _isPlaying = false;
+        private bool _isTimerRunning = false;
+        private int _audioSessionId = 0;
+
 
 
         // BOTTOM SHEET
@@ -45,6 +50,7 @@ namespace MauiAppMain
         // SELECTIONS
         private PointOfInterest? _selectedPoi;
         private PointOfInterest? _lastSpokenPoi;
+
 
         // CANCEL TOKENS
         private CancellationTokenSource? _cts;
@@ -148,7 +154,7 @@ namespace MauiAppMain
             // Thay vì ẩn mất tiêu xuống đáy, ta trừ đi 70 (chiều cao của Tab Bar)
             // để khi ẩn, PoiSheet nằm ngay sát trên đầu Tab Bar hoặc lặn hẳn dưới nó
             _sheetHiddenY = height;
-            _sheetHalfY = height - 320;
+            _sheetHalfY = height - 420;
             //_sheetFullY = 50;
 
             if (!_sheetVisible)
@@ -258,6 +264,7 @@ namespace MauiAppMain
 
             if (showList)
             {
+
                 SinglePoiView.IsVisible = false;
                 PoiListContainer.IsVisible = true;
 
@@ -311,62 +318,163 @@ namespace MauiAppMain
             }
         }
 
+        private void UpdateAudioUI(bool isPlaying)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (isPlaying)
+                {
+                    AudioStatusLabel.Text = "ĐANG PHÁT...";
+                    AudioIconBtn.Source = "pause_icon.png"; // folder con
+                    AudioIconBtn.BackgroundColor = Colors.Gray;
+                }
+                else
+                {
+                    AudioStatusLabel.Text = "PHÁT AUDIO";
+                    AudioIconBtn.Source = "AudioIcon/play_icon.png";
+                    AudioIconBtn.BackgroundColor = Color.FromArgb("#00AEEF");
+                }
+            });
+        }
+
+        // Trong hàm PlayAudio, sửa đoạn MainThread:
         private async Task PlayAudio()
         {
-            if (SelectedPoi == null) return;
+
+
+            if (SelectedPoi == null || string.IsNullOrEmpty(SelectedPoi.Description)) return;
 
             try
             {
-                await SpeakPoiDescription(SelectedPoi);
-            }
-            finally
-            {
-                // ✅ luôn reset dù có lỗi hay không
-                _isPlaying = false;
+                _ttsCts?.Cancel();
+                _ttsCts = new CancellationTokenSource();
 
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    AudioBtn.Text = "▶ Phát audio";
-                    AudioBtn.BackgroundColor = Color.FromArgb("#E3F2FD");
-                    AudioBtn.TextColor = Color.FromArgb("#1976D2");
-                });
+                // 🔥 kill timer cũ
+                _timerCts?.Cancel();
+                _timerCts = new CancellationTokenSource();
+
+                _isPlaying = true;
+                UpdateAudioUI(true);
+
+                int wordCount = SelectedPoi.Description.Split(' ').Length;
+                double estimatedDurationMs = SelectedPoi.Description.Length * 60;
+
+                AudioProgressBar.AbortAnimation("AudioProgress");
+                AudioProgressBar.ScaleX = 0;
+
+                
+
+                double maxWidth = ProgressContainer.Width; // container của thanh
+
+                var progressAnimation = new Animation(
+                    v => AudioProgressBar.WidthRequest = v,
+                    0,
+                    maxWidth
+                );
+
+                progressAnimation.Commit(this, "AudioProgress",
+                    length: (uint)estimatedDurationMs,
+                    easing: Easing.Linear);
+
+
+                int totalSeconds = Math.Max(1, (int)(estimatedDurationMs / 1000));
+                int current = 0;
+
+                //AudioTimeLabel.Text = $"0:00 / {totalSeconds / 60}:{totalSeconds % 60:00}";
+                
+                _audioSessionId++;
+                int currentSession = _audioSessionId;
+
+                // timer
+                _ = RunTimerAsync(_timerCts.Token);
+
+                // TTS
+                _ = RunTTSAsync(currentSession);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Lỗi: {ex.Message}");
             }
         }
 
         private void StopAudio()
         {
+            _audioSessionId++; // 🔥 QUAN TRỌNG NHẤT
+
             _ttsCts?.Cancel();
+            _timerCts?.Cancel();
 
             _isPlaying = false;
 
-            AudioBtn.Text = "▶ Phát audio";
-            AudioBtn.BackgroundColor = Color.FromArgb("#E3F2FD");
-            AudioBtn.TextColor = Color.FromArgb("#1976D2");
+            UpdateAudioUI(false);
+
+            AudioProgressBar.AbortAnimation("AudioProgress");
+            AudioProgressBar.ScaleX = 0;
         }
 
+        // Trong OnAudioToggleClicked:
         private async void OnAudioToggleClicked(object sender, EventArgs e)
         {
-            if (!_isPlaying)
+            if (_isPlaying)
             {
-                // PLAY
-                _isPlaying = true;
-
-                AudioBtn.Text = "⏹ Dừng";
-                AudioBtn.BackgroundColor = Color.FromArgb("#F0F0F0");
-                AudioBtn.TextColor = Colors.Black;
-
-                await PlayAudio(); // gọi lại hàm cũ của bạn
+                StopAudio();
             }
             else
             {
-                // STOP
-                _isPlaying = false;
+                await PlayAudio();
+            }
+        }
 
-                AudioBtn.Text = "▶ Phát audio";
-                AudioBtn.BackgroundColor = Color.FromArgb("#E3F2FD");
-                AudioBtn.TextColor = Color.FromArgb("#1976D2");
+        private async Task RunTTSAsync(int sessionId)
+        {
+            try
+            {
+                var currentPoi = SelectedPoi; // 🔥 giữ reference
 
-                StopAudio(); // gọi lại hàm cũ của bạn
+                await SpeakPoiDescription(currentPoi);
+
+                // 🔥 DOUBLE CHECK (cực quan trọng)
+                if (sessionId != _audioSessionId || !_isPlaying)
+                    return;
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    // 🔥 ép thanh chạy hết
+                    AudioProgressBar.ScaleX = 1;
+
+                    StopAudio();
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // 🔥 BỎ QUA hoàn toàn
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private async Task RunTimerAsync(CancellationToken token)
+        {
+            int current = 0;
+
+            try
+            {
+                while (!token.IsCancellationRequested && _isPlaying)
+                {
+                    await Task.Delay(1000, token);
+
+                    current++;
+
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        //AudioTimeLabel.Text = $"{current / 60}:{current % 60:00}";
+                    });
+                }
+            }
+            catch (TaskCanceledException)
+            {
             }
         }
 
@@ -377,11 +485,11 @@ namespace MauiAppMain
         {
             _currentTab = 0;
             UpdateTabTitle();
+            //UpdateTabVisuals(); // Gọi hàm cập nhật màu sắc
 
+            // ... logic đổ dữ liệu cũ của bạn ...
             _displayedPois.Clear();
-            foreach (var poi in _pois)
-                _displayedPois.Add(poi);
-
+            foreach (var poi in _pois) _displayedPois.Add(poi);
             await ShowBottomSheet(true);
         }
 
@@ -390,11 +498,11 @@ namespace MauiAppMain
         {
             _currentTab = 1;
             UpdateTabTitle();
+            //UpdateTabVisuals(); // Gọi hàm cập nhật màu sắc
 
+            // ... logic đổ dữ liệu cũ của bạn ...
             _displayedPois.Clear();
-            foreach (var poi in _favorites)
-                _displayedPois.Add(poi);
-
+            foreach (var poi in _favorites) _displayedPois.Add(poi);
             await ShowBottomSheet(true);
         }
 
@@ -541,18 +649,28 @@ namespace MauiAppMain
 
         void UpdateSaveButtonUI(PointOfInterest poi)
         {
+            if (poi == null) return;
+
+            var icon = new FontImageSource
+            {
+                FontFamily = "MaterialIcons",
+                Size = 20
+            };
+
             if (poi.IsFavorite)
             {
-                SaveBtn.Text = "Saved";
-                SaveBtn.BackgroundColor = Color.FromArgb("#E3F2FD");
-                SaveBtn.TextColor = Colors.DeepSkyBlue;
+                
+                icon.Glyph = "❤️"; // bookmark filled
+                icon.Color = Colors.DeepSkyBlue;
             }
             else
             {
-                SaveBtn.Text = "Save";
-                SaveBtn.BackgroundColor = Color.FromArgb("#F0F0F0");
-                SaveBtn.TextColor = Colors.Black;
+                
+                icon.Glyph = "🤍"; // bookmark outline   
+                icon.Color = Colors.Gray;
             }
+
+            SaveBtn.ImageSource = icon;
         }
 
 
@@ -598,13 +716,19 @@ namespace MauiAppMain
             try
             {
                 // Hủy audio cũ
-                _ttsCts?.Cancel();
+                //_ttsCts?.Cancel();
 
-                _ttsCts = new CancellationTokenSource();
+                //_ttsCts = new CancellationTokenSource();
+
+                var options = new SpeechOptions
+                {
+                    Pitch = 1.0f, // giọng bình thường
+                };
 
                 await TextToSpeech.Default.SpeakAsync(
                     poi.Description,
-                    cancelToken: _ttsCts.Token);
+                    options,
+                    _ttsCts.Token);
             }
             catch (OperationCanceledException)
             {
@@ -620,9 +744,38 @@ namespace MauiAppMain
         {
             string title = _currentTab == 0 ? "Tất cả POI" : "Yêu thích";
 
-            TabTitleLabel.Text = title;          // list view
-            //SingleTabTitleLabel.Text = title;    // single view
+            CurrentTabLabel.Text = title;          // cập nhật tên tab trên danh sách
+                                                   
         }
+
+        //private void UpdateTabVisuals()
+        //{
+        //    // Định nghĩa màu sắc
+        //    var activeColor = Color.FromArgb("#00AEEF"); // Màu xanh khi chọn
+        //    var inactiveColor = Color.FromArgb("#5F6368"); // Màu xám mặc định
+
+        //    if (_currentTab == 1) // Tab Yêu thích đang chọn
+        //    {
+        //        // Sáng Tab Yêu thích
+        //        LblFavorite.TextColor = activeColor;
+        //        ImgFavorite.Opacity = 1.0;
+
+        //        // Tối Tab Tất cả
+        //        LblAll.TextColor = inactiveColor;
+        //        ImgAll.Opacity = 0.5; // Làm mờ icon không chọn
+        //    }
+        //    else // Tab Tất cả đang chọn
+        //    {
+        //        // Sáng Tab Tất cả
+        //        LblAll.TextColor = activeColor;
+        //        ImgAll.Opacity = 1.0;
+
+        //        // Tối Tab Yêu thích
+        //        LblFavorite.TextColor = inactiveColor;
+        //        ImgFavorite.Opacity = 0.5;
+        //    }
+        //}
+
 
 
         // ---------------????-----------------------//
