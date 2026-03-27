@@ -67,8 +67,10 @@
                 <VerticalStackLayout x:Name="SinglePoiView" IsVisible="True">
                     <Label x:Name="SingleTabTitleLabel" FontAttributes="Bold"/>
                     <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
+                        
                         <!-- Tên POI (bên trái) -->
                         <Label Text="{Binding SelectedPoi.Name}" FontSize="22" FontAttributes="Bold" TextColor="Black" VerticalOptions="Center"/>
+                        
                         <!-- Nút Save (bên phải) -->
                         <Button x:Name="SaveBtn" Grid.Column="1" BackgroundColor="#F0F0F0" TextColor="Black" CornerRadius="20" HeightRequest="40" Padding="15,0" FontSize="13" Clicked="OnSaveClicked" VerticalOptions="Center">
                             <Button.ImageSource>
@@ -151,7 +153,7 @@
            TextColor="Black"
            Padding="10,0"/>
 
-                    <CollectionView x:Name="PoiListView" SelectionMode="None" SelectionChanged="OnPoiItemSelected" VerticalOptions="FillAndExpand">
+                    <CollectionView x:Name="PoiListView" SelectionMode="Single" SelectionChanged="OnPoiItemSelected" VerticalOptions="FillAndExpand">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <VerticalStackLayout Padding="0,15" Spacing="10">
@@ -170,9 +172,10 @@
                                     <Grid ColumnDefinitions="*, Auto" Padding="5,0">
                                         <VerticalStackLayout Grid.Column="0" Spacing="2">
                                             <Grid ColumnDefinitions="*, Auto" Padding="5,0">
+                                               
                                                 <!-- Tên POI -->
-                                                <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" TextColor="Black" VerticalOptions="Center" Grid.Column="0" />
-                                                <!-- Nút Heart -->
+                                                    <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" TextColor="Black" VerticalOptions="Center" Grid.Column="0" />
+                                                    <!-- Nút Heart -->
                                                 <Button Grid.Column="1" Clicked="OnFavoriteToggleClicked" CommandParameter="{Binding .}" BackgroundColor="Transparent" WidthRequest="50" HeightRequest="50" VerticalOptions="Center">
                                                     <Button.ImageSource>
                                                         <FontImageSource FontFamily="MaterialIcons" Glyph="🤍" Color="Gray" Size="30"/>
