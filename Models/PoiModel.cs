@@ -16,7 +16,7 @@ namespace MauiAppMain.Models
         public double RadiusMeters { get; set; } = 0;
         public bool IsTriggered { get; set; } = false;
         public string ImageUrlsJson { get; set; }
-        public string isFavorite { get; set; } = "false";
+        public bool IsFavorite { get; set; } = false;
         public bool IsDeleted { get; set; }
 
         [Ignore] // Không lưu cột này vào DB, chỉ dùng để hiển thị

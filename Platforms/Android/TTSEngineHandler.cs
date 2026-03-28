@@ -7,9 +7,9 @@ using TextToSpeech = global::Android.Speech.Tts.TextToSpeech;
 
 namespace MauiAppMain
 {
-
     public static class AndroidTtsService
     {
+        public static Action? OnSpeechCompleted;
         static TextToSpeech? tts;
         static int queueCount = 0;
         const int MAX_QUEUE = 3;
@@ -81,6 +81,7 @@ namespace MauiAppMain
             public override void OnDone(string utteranceId)
             {
                 queueCount--;
+                OnSpeechCompleted?.Invoke();
             }
 
             public override void OnError(string utteranceId)

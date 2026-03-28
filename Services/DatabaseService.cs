@@ -77,7 +77,6 @@ namespace MauiAppMain.Services
                 .ToListAsync();
 
             var result = new List<PointOfInterest>();
-
             foreach (var p in pois)
             {
                 var t = translations.FirstOrDefault(x => x.PoiId == p.Id);
@@ -139,10 +138,9 @@ namespace MauiAppMain.Services
             await Init();
             await _database!.InsertAsync(poi);
         }
-        public async Task UpdatePOIAsync(Poi poi)
+        public async Task UpdatePoiAsync(Poi poi)
         {
-            await Init();
-            await _database!.UpdateAsync(poi);
+            await Init(); await _database!.UpdateAsync(poi);
         }
         //public async Task List<<Poiimages>> GetAllImageAsync()
         //{

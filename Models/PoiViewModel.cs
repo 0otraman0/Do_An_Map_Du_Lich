@@ -20,6 +20,7 @@ namespace MauiAppMain.Models
         public bool IsTriggered { get; set; } = false;
         public string ImageUrlsJson { get; set; } = string.Empty;
         public int priorityLevel {  get; set; } = 1;
+        public bool IsFavorite { get; set;  } = false;
 
         [Ignore] // Không lưu cột này vào DB, chỉ dùng để hiển thị
         public List<string> ImageList => string.IsNullOrEmpty(ImageUrlsJson)
