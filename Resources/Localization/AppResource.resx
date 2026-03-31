@@ -129,4 +129,10 @@
   <data name="Volumn_bar" xml:space="preserve">
     <value>Sound volumn</value>
   </data>
+  <data name="All_Poi" xml:space="preserve">
+    <value>All location</value>
+  </data>
+  <data name="Favorite_Poi" xml:space="preserve">
+    <value>Favorite location</value>
+  </data>
 </root>

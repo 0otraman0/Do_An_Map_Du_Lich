@@ -8,39 +8,62 @@
 
         <!-- MAP -->
         <maps:Map x:Name="MyMap"
+                  IsVisible="False"
                   IsShowingUser="True"
                   MapClicked="OnMapClicked" />
 
-        <!-- 🔵 TOP BAR -->
-        <Grid VerticalOptions="Start" Padding="15,10">
-            <Frame HeightRequest="56"
-                   CornerRadius="28"
-                   BackgroundColor="White"
-                   HasShadow="True"
-                   Padding="15,0">
 
-                <Grid ColumnDefinitions="Auto,*,Auto">
+        <!-- TOP OVERLAY -->
+        <Grid VerticalOptions="Start"
+      Padding="15,10"
+      RowDefinitions="Auto,Auto">
 
-                    <!-- MENU -->
-                    <ImageButton Source="menu_2.svg"
-                                 BackgroundColor="Transparent"
-                                 Clicked="OnMenuClicked"/>
+            <!-- SEARCH BAR -->
+            <Frame
+        Grid.Row="0"
+        HeightRequest="56"
+        CornerRadius="28"
+        BackgroundColor="White"
+        HasShadow="True"
+        Padding="15,0">
+                <Grid ColumnDefinitions="Auto,*,Auto"
+              VerticalOptions="Center">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSearchTapped"/>
+                    </Grid.GestureRecognizers>
 
-                    <!-- SEARCH -->
-                    <Entry x:Name="SearchEntry"
-                           Grid.Column="1"
-                           Placeholder="Tìm kiếm quán ăn"
-                           BackgroundColor="Transparent"
-                           FontSize="16"
-                           VerticalOptions="Center"/>
+                    <!-- Menu -->
+                    <ImageButton
+                Source="menu_2.svg"
+                BackgroundColor="Transparent"
+                WidthRequest="20"
+                HeightRequest="20"
+                VerticalOptions="Center"
+                Clicked="OnMenuClicked"/>
 
-                    <!-- SEARCH BUTTON -->
-                    <ImageButton Grid.Column="2"
-                                 Source="search_svg.png"
-                                 BackgroundColor="Transparent"
-                                 Clicked="OnSearchTapped"/>
+                    <!-- Search -->
+                    <Grid             Grid.Column="1"
+>
 
+                        <Label
+            Text="{Binding Search_placeholder}"
+            x:Name="SearchEntry"
+            TextColor="#999999"
+            FontSize="20"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            InputTransparent="True"
+            Margin="0,0,0,0"/>
+                    </Grid>
+                    <!--TextChanged="OnSearchTextChanged"-->
+                    <!-- Search Icon -->
+                    <ImageButton
+                Grid.Column="2"
+                Source="search_svg.png"
+                WidthRequest="18"
+                HeightRequest="18"/>
                 </Grid>
+
             </Frame>
         </Grid>
 
@@ -57,7 +80,8 @@
                                      Spacing="5"
                                      VerticalOptions="Center">
                     <Image Source="heart_icon.png" WidthRequest="24"/>
-                    <Label Text="Yêu thích"
+                    <Label x:Name="Favorite_Poi_button"
+                           Text="Poi yêu thích"
                            HorizontalOptions="Center"
                            FontSize="12"/>
                     <VerticalStackLayout.GestureRecognizers>
@@ -70,7 +94,8 @@
                                      Spacing="5"
                                      VerticalOptions="Center">
                     <Image Source="list_icon.png" WidthRequest="24"/>
-                    <Label Text="Tất cả POI"
+                    <Label x:Name="All_Poi_button"
+                        Text="Tất cả Poi"
                            HorizontalOptions="Center"
                            FontSize="12"/>
                     <VerticalStackLayout.GestureRecognizers>
@@ -106,7 +131,6 @@
 
                 <!-- SINGLE POI -->
                 <VerticalStackLayout x:Name="SinglePoiView">
-
                     <Label Text="{Binding SelectedPoi.Name}"
                            FontSize="22"
                            FontAttributes="Bold"/>

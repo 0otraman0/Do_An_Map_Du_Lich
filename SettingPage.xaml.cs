@@ -1,8 +1,10 @@
-using MauiAppMain.Resources.Localization;
-using System.Globalization;
 using MauiAppMain.Models;
+using MauiAppMain.Resources.Localization;
 using MauiAppMain.Services;
-
+using System.Globalization;
+#if ANDROID
+using Android.Content;
+#endif
 namespace MauiAppMain;
 
 public partial class SettingPage : ContentPage
@@ -45,16 +47,31 @@ public partial class SettingPage : ContentPage
 
         // hide list
         LanguageList.IsVisible = false;
-
-        // STEP 1: Save language TEMPORARILY (for API call)
+        // 0. Stop any current TTS playback immediately
+#if ANDROID
+        // Stop current speech
+        AndroidTtsService.Stop();
+#endif
+        // 1. Save language TEMPORARILY (for API call)
         Preferences.Set("App_language", lang.Code);
 
-        // STEP 2: Fetch data FIRST if the language data is not available
-        if(!await database.IsLanguageDataAvailable(lang.Code))
+        // 2. Fetch data FIRST if the language data is not available
+        if (!await database.IsLanguageDataAvailable(lang.Code))
             await dataFetch.FetchData(true);
 
-        // STEP 3: NOW apply language + reload UI
+        // 3. NOW apply language + reload UI
         LanguageService.SetLanguage(lang.Code);
+
+        // 4. Restart service to apply new language in TTS
+#if ANDROID
+        var context = Android.App.Application.Context;
+
+        var serviceIntent = new Intent(context, typeof(LocationForegroundService));
+
+        context.StopService(serviceIntent);
+        context.StartForegroundService(serviceIntent);
+        AndroidTtsService.Init(context);
+#endif
     }
 
     async void OnLanguageButtonTapped(object sender, EventArgs e)

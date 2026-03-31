@@ -129,4 +129,10 @@
   <data name="Volumn_bar" xml:space="preserve">
     <value>..</value>
   </data>
+  <data name="All_Poi" xml:space="preserve">
+    <value>すべての場所</value>
+  </data>
+  <data name="Favorite_Poi" xml:space="preserve">
+    <value>好きな場所</value>
+  </data>
 </root>

@@ -61,6 +61,24 @@ namespace MauiAppMain.Resources.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to All location.
+        /// </summary>
+        public static string All_Poi {
+            get {
+                return ResourceManager.GetString("All_Poi", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Favorite location.
+        /// </summary>
+        public static string Favorite_Poi {
+            get {
+                return ResourceManager.GetString("Favorite_Poi", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Search here.
         /// </summary>
         public static string Search_placeholder {
