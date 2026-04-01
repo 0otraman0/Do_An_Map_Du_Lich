@@ -178,10 +178,10 @@ private bool IsLowStorage()
                 return $"{baseUrl}?lastUpdated=0&lang={lang}";
             }
             Console.WriteLine("Device has low storage, requesting data with language filter: " + lang);
-            return $"{baseUrl}?lastUpdated={LastUpdated}&lang={lang}";
+            return $"{baseUrl}?lastUpdated=0&lang={lang}";
         }
         Console.WriteLine("Device has sufficient storage, requesting all data");
-        return $"{baseUrl}?lastUpdated={LastUpdated}";
+        return $"{baseUrl}?lastUpdated=0";
     }
 }
 public class PoiApiResponse

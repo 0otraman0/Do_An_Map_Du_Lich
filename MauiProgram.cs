@@ -23,16 +23,16 @@ namespace MauiAppMain
 #if ANDROID
                     handlers.AddHandler<Microsoft.Maui.Controls.Maps.Map, CustomMapHandler>();
 #endif
-                }); 
-                MapHandler.Mapper.AppendToMapping("DisableMyLocationButton", (handler, view) =>
-                {
-                #if ANDROID
-                    handler.PlatformView.GetMapAsync(new MapReadyCallback(map =>
-                    {
-                        map.UiSettings.MyLocationButtonEnabled = false;
-                    }));
-#endif
                 });
+#if ANDROID
+            MapHandler.Mapper.AppendToMapping("DisableMyLocationButton", (handler, view) =>
+            {
+                handler.PlatformView.GetMapAsync(new MapReadyCallback(map =>
+                {
+                    map.UiSettings.MyLocationButtonEnabled = false;
+                }));
+            });
+#endif
             builder.Services.AddSingleton<DatabaseService>();
             builder.Services.AddSingleton<DataFetch>();
             builder.Services.AddSingleton<HttpClient>();

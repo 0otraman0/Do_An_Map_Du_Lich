@@ -275,6 +275,8 @@ namespace MauiAppMain.Services
         }
         public async Task<List<PointOfInterest>> SearchPoiAsync(string keyword)
         {
+            await Init();
+
             keyword = keyword.ToLower();
 
             return await _database!.Table<PointOfInterest>()
@@ -296,6 +298,17 @@ namespace MauiAppMain.Services
                 .CountAsync();
 
             return count > 0;
+        }
+        // hàm clear database để ở cuối cùng
+        public async Task ClearAllDataAsync()
+        {
+            await Init();
+
+            // 🔥 Xóa dữ liệu trong DB
+            await _database.DeleteAllAsync<POIImage>();
+            await _database.DeleteAllAsync<PoiDescription>();
+            await _database.DeleteAllAsync<Language_option>();
+            await _database.DeleteAllAsync<Poi>();
         }
     }
 }

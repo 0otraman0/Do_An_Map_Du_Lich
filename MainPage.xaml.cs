@@ -56,6 +56,8 @@ namespace MauiAppMain
         // CONSTRUCTOR
         public MainPage(DatabaseService database, DataFetch dataFetch)
         {
+
+
             InitializeComponent();
 
             _database = database;
@@ -70,59 +72,45 @@ namespace MauiAppMain
         {
             base.OnAppearing();
 
+            // ⚠️ Đừng clear DB ở đây (giải thích bên dưới)
+
             SearchEntry.Text = AppResource.Search_placeholder;
 
+            // xin quyền (OK nhưng vẫn hơi nặng)
             var status = await Permissions.RequestAsync<Permissions.LocationAlways>();
-
             if (status != PermissionStatus.Granted)
             {
                 await DisplayAlert("Permission", "Location permission required", "OK");
                 return;
             }
-            // start tracking user in real-time
-#if ANDROID
-            AndroidTtsService.OnSpeechCompleted = () =>
+
+            // 🚀 LOAD DB TRƯỚC
+            var list = await _database.GetPOIsAsync();
+
+            _pois = new ObservableCollection<PointOfInterest>(list);
+
+            _favorites = new ObservableCollection<PointOfInterest>(
+                _pois.Where(p => p.IsFavorite));
+
+            // 🚀 BIND 1 LẦN DUY NHẤT
+            PoiListView.ItemsSource = _pois;
+
+            // map xử lý sau (không block UI)
+            _ = Task.Run(() =>
             {
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    _isPlaying = false;
-                    UpdateAudioUI(false);
+                    if (_pois.Count > 0)
+                    {
+                        LoadPoisOnMap();
+
+                        var firstPoi = _pois[0];
+                        MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                            new Location(firstPoi.Latitude, firstPoi.Longitude),
+                            Distance.FromMeters(500)));
+                    }
                 });
-            };
-
-            if (!LocationForegroundService.IsRunning)
-            {
-                var intent = new Android.Content.Intent(
-                Android.App.Application.Context,
-                typeof(LocationForegroundService));
-
-                Android.App.Application.Context.StartForegroundService(intent);
-            }
-#endif
-
-            _displayedPois = new ObservableCollection<PointOfInterest>(_pois);
-            PoiListView.ItemsSource = _displayedPois;
-
-            var list = await _database.GetPOIsAsync();  // list từ DB
-
-            _pois.Clear();                               // xóa dữ liệu cũ
-            foreach (var poi in list)
-                _pois.Add(poi);                          // thêm từng item vào ObservableCollection
-
-            _favorites.Clear();
-            foreach (var poi in _pois)
-                if (poi.IsFavorite)
-                    _favorites.Add(poi);
-
-            if (_pois.Count > 0)
-            {
-                LoadPoisOnMap();
-
-                var firstPoi = _pois[0];
-                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                    new Location(firstPoi.Latitude, firstPoi.Longitude),
-                    Distance.FromMeters(500)));
-            }
+            });
         }
 
         protected override void OnSizeAllocated(double width, double height)
@@ -176,6 +164,7 @@ namespace MauiAppMain
                 PoiSheet.TranslationY = _sheetHalfY;
                 _sheetVisible = true;
             }
+            UpdateTabTitle();
 
             SinglePoiView.IsVisible = true;
             PoiListContainer.IsVisible = false;
@@ -210,6 +199,8 @@ namespace MauiAppMain
                     break;
             }
         }
+
+
 
         // ---------------- AUDIO ----------------
         private Task PlayAudio()
@@ -292,6 +283,8 @@ namespace MauiAppMain
                 if (item != null)
                     _favorites.Remove(item);
             }
+            if (SelectedPoi != null && SelectedPoi.Id == realPoi.Id)
+                UpdateSaveButtonUI(SelectedPoi);
         }
 
         private async void OnFavoriteToggleClicked(object sender, EventArgs e)
@@ -300,10 +293,39 @@ namespace MauiAppMain
                 await ToggleFavorite(poi);
         }
 
+        void UpdateSaveButtonUI(PointOfInterest poi)
+        {
+            if (poi == null) return;
+
+            var icon = new FontImageSource
+            {
+                FontFamily = "MaterialIcons",
+                Size = 20
+            };
+
+            if (poi.IsFavorite)
+            {
+
+                icon.Glyph = "❤️"; // bookmark filled
+                icon.Color = Colors.DeepSkyBlue;
+            }
+            else
+            {
+
+                icon.Glyph = "🤍"; // bookmark outline   
+                icon.Color = Colors.Gray;
+            }
+
+            SaveBtn.ImageSource = icon;
+        }
+
+
         // ---------------- TABS ----------------
         private async void OnAllPoiTabClicked(object sender, EventArgs e)
         {
             _currentTab = 0;
+
+            UpdateTabTitle();
 
             //  SWITCH TO LIST MODE
             SinglePoiView.IsVisible = false;
@@ -328,6 +350,8 @@ namespace MauiAppMain
         {
             _currentTab = 1;
 
+            UpdateTabTitle();
+
             // SWITCH TO LIST MODE
             SinglePoiView.IsVisible = false;
             PoiListContainer.IsVisible = true;
@@ -337,6 +361,14 @@ namespace MauiAppMain
                 _displayedPois.Add(poi);
 
             await PoiSheet.TranslateTo(0, _sheetFullY, 200);
+        }
+
+        void UpdateTabTitle()
+        {
+            string title = _currentTab == 0 ? "Tất cả POI" : "Yêu thích";
+
+            CurrentTabLabel.Text = title;          // cập nhật tên tab trên danh sách
+
         }
 
         // ---------------- SEARCH ----------------
@@ -378,6 +410,13 @@ namespace MauiAppMain
 
             // ❗ reset selection để không bị highlight
             ((CollectionView)sender).SelectedItem = null;
+        }
+
+        private async void OnSaveClicked(object sender, EventArgs e)
+        {
+
+            await ToggleFavorite(SelectedPoi);
+
         }
     }
 }
