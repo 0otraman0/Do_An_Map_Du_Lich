@@ -43,18 +43,16 @@
                 Clicked="OnMenuClicked"/>
 
                     <!-- Search -->
-                    <Grid             Grid.Column="1"
->
-
+                    <Grid Grid.Column="1">
                         <Label
-            Text="{Binding Search_placeholder}"
-            x:Name="SearchEntry"
-            TextColor="#999999"
-            FontSize="20"
-            HorizontalOptions="Center"
-            VerticalOptions="Center"
-            InputTransparent="True"
-            Margin="0,0,0,0"/>
+                        Text="{Binding Search_placeholder}"
+                        x:Name="SearchEntry"
+                        TextColor="#999999"
+                        FontSize="20"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        InputTransparent="True"
+                        Margin="0,0,0,0"/>
                     </Grid>
                     <!--TextChanged="OnSearchTextChanged"-->
                     <!-- Search Icon -->
@@ -241,74 +239,35 @@
                 </VerticalStackLayout>
 
                 <!-- LIST -->
-                <VerticalStackLayout x:Name="PoiListContainer" IsVisible="False" Spacing="5">
-
+                <Grid x:Name="PoiListContainer" IsVisible="False" RowDefinitions="Auto,*">
                     <Label x:Name="CurrentTabLabel"
-                           Text="Tất cả POI"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           TextColor="Black"
-                           Padding="15,10,15,0"/>
-                    <CollectionView 
-                            x:Name="PoiListView"
-                            ItemsLayout="VerticalList"
-                            ItemSizingStrategy="MeasureFirstItem"
-                            SelectionMode="Single"
-                            SelectionChanged="OnPoiItemSelected">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <VerticalStackLayout Padding="0,15" Spacing="10">
+           Grid.Row="0"
+           Text="Tất cả POI"
+           FontSize="20"
+           FontAttributes="Bold"
+           TextColor="Black"
+           Padding="15,10,15,5"/>
 
-                                    <ScrollView Orientation="Horizontal"
-                                                HeightRequest="160"
-                                                HorizontalScrollBarVisibility="Never">
-                                        <HorizontalStackLayout Spacing="6" Padding="15,0">
-                                            <BindableLayout.ItemsSource>
-                                                <Binding Path="ImageList"/>
-                                            </BindableLayout.ItemsSource>
+                    <Grid Grid.Row="1">
 
-                                            <BindableLayout.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Frame CornerRadius="12"
-                                                           Padding="0"
-                                                           IsClippedToBounds="True"
-                                                           WidthRequest="260"
-                                                           HasShadow="False">
-
-                                                        <Image Source="{Binding}"
-                                                               Aspect="AspectFill"
-                                                               HeightRequest="160"
-                                                               WidthRequest="260"
-                                                               />
-                                                    </Frame>
-                                                </DataTemplate>
-                                            </BindableLayout.ItemTemplate>
-                                        </HorizontalStackLayout>
-                                    </ScrollView>
-
-                                    <Grid ColumnDefinitions="*, Auto" Padding="15,0">
-                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                            <Label Text="{Binding Name}" 
-                                                   FontSize="18" 
-                                                   FontAttributes="Bold" 
-                                                   TextColor="Black" 
-                                                   VerticalOptions="Center" />
-
-                                            <Label Text="{Binding Description}" 
-                                                   FontSize="14" 
-                                                   TextColor="Gray" 
-                                                   MaxLines="2" />
+                        <CollectionView x:Name="AllPoiListView"
+                        SelectionMode="Single"
+                        SelectionChanged="OnPoiItemSelected">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate >
+                                    <Grid RowDefinitions="Auto, Auto" Padding="15" ColumnDefinitions="100, *">
+                                        <Border Grid.RowSpan="2" Grid.Column="0" StrokeShape="RoundRectangle 8" HeightRequest="80" WidthRequest="80">
+                                            <Image Aspect="AspectFill" Source="{Binding ImageList[0]}"/>
+                                        </Border>
+                                        <VerticalStackLayout Grid.Column="1" Margin="15,0,0,0" Spacing="2">
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
+                                            <Label Text="{Binding Description}" MaxLines="2" FontSize="13" TextColor="Gray"/>
                                         </VerticalStackLayout>
-
-                                        <Button Grid.Column="1" 
-                                                Clicked="OnFavoriteToggleClicked" 
-                                                CommandParameter="{Binding .}" 
-                                                BackgroundColor="Transparent" 
-                                                WidthRequest="50" 
-                                                HeightRequest="50" 
-                                                VerticalOptions="Start">
+                                        <Button Grid.Column="1" HorizontalOptions="End" VerticalOptions="Start"
+                                Clicked="OnFavoriteToggleClicked" CommandParameter="{Binding .}"
+                                BackgroundColor="Transparent" WidthRequest="44" HeightRequest="44">
                                             <Button.ImageSource>
-                                                <FontImageSource Glyph="🤍" Color="Gray" Size="26"/>
+                                                <FontImageSource Glyph="🤍" Color="Gray" Size="22"/>
                                             </Button.ImageSource>
                                             <Button.Style>
                                                 <Style TargetType="Button">
@@ -316,7 +275,7 @@
                                                         <DataTrigger TargetType="Button" Binding="{Binding IsFavorite}" Value="True">
                                                             <Setter Property="ImageSource">
                                                                 <Setter.Value>
-                                                                    <FontImageSource Glyph="❤️" Color="DeepSkyBlue" Size="26"/>
+                                                                    <FontImageSource Glyph="❤️" Color="DeepSkyBlue" Size="22"/>
                                                                 </Setter.Value>
                                                             </Setter>
                                                         </DataTrigger>
@@ -325,13 +284,51 @@
                                             </Button.Style>
                                         </Button>
                                     </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
 
-                                    <BoxView HeightRequest="1" Color="#F0F0F0" Margin="15,10,15,0"/>
-                                </VerticalStackLayout>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
-                </VerticalStackLayout>
+                        <CollectionView x:Name="FavoritePoiListView"
+                        IsVisible="False" 
+                        ItemsUpdatingScrollMode="KeepItemsInView"
+                        SelectionMode="Single"
+                        SelectionChanged="OnPoiItemSelected">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid RowDefinitions="Auto, Auto" Padding="15" ColumnDefinitions="100, *">
+                                        <Border Grid.RowSpan="2" Grid.Column="0" StrokeShape="RoundRectangle 8" HeightRequest="80" WidthRequest="80">
+                                            <Image Aspect="AspectFill" Source="{Binding ImageList[0]}"/>
+                                        </Border>
+                                        <VerticalStackLayout Grid.Column="1" Margin="15,0,0,0" Spacing="2">
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
+                                            <Label Text="{Binding Description}" MaxLines="2" FontSize="13" TextColor="Gray"/>
+                                        </VerticalStackLayout>
+                                        <Button Grid.Column="1" HorizontalOptions="End" VerticalOptions="Start"
+                                Clicked="OnFavoriteToggleClicked" CommandParameter="{Binding .}"
+                                BackgroundColor="Transparent" WidthRequest="44" HeightRequest="44">
+                                            <Button.ImageSource>
+                                                <FontImageSource Glyph="🤍" Color="Gray" Size="22"/>
+                                            </Button.ImageSource>
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <DataTrigger TargetType="Button" Binding="{Binding IsFavorite}" Value="True">
+                                                            <Setter Property="ImageSource">
+                                                                <Setter.Value>
+                                                                    <FontImageSource Glyph="❤️" Color="DeepSkyBlue" Size="22"/>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Grid>
+                </Grid>
 
             </Grid>
         </Grid>

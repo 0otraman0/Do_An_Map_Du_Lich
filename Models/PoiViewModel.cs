@@ -1,14 +1,11 @@
 ﻿using SQLite;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace MauiAppMain.Models
 {
-    public class PointOfInterest
+    public class PointOfInterest : INotifyPropertyChanged
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
@@ -19,12 +16,34 @@ namespace MauiAppMain.Models
         public double RadiusMeters { get; set; } = 0;
         public bool IsTriggered { get; set; } = false;
         public string ImageUrlsJson { get; set; } = string.Empty;
-        public int priorityLevel {  get; set; } = 1;
-        public bool IsFavorite { get; set;  } = false;
+        public int priorityLevel { get; set; } = 1;
         public string Address { get; set; } = string.Empty;
-        [Ignore] // Không lưu cột này vào DB, chỉ dùng để hiển thị
+
+        // Trường IsFavorite được viết lại để phát tín hiệu cho UI
+        private bool _isFavorite = false;
+        public bool IsFavorite
+        {
+            get => _isFavorite;
+            set
+            {
+                if (_isFavorite != value)
+                {
+                    _isFavorite = value;
+                    OnPropertyChanged(); // Thông báo cho UI cập nhật trái tim
+                }
+            }
+        }
+
+        [Ignore]
         public List<string> ImageList => string.IsNullOrEmpty(ImageUrlsJson)
             ? new List<string>()
-            : System.Text.Json.JsonSerializer.Deserialize<List<string>>(ImageUrlsJson);
+            : JsonSerializer.Deserialize<List<string>>(ImageUrlsJson) ?? new List<string>();
+
+        // Phần xử lý sự kiện thông báo thay đổi
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

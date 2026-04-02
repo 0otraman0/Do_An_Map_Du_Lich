@@ -264,6 +264,29 @@ namespace MauiAppMain.Services
 
             return count > 0;
         }
+
+        // Hàm này dùng để cập nhật trạng thái yêu thích CỰC NHANH
+        public async Task UpdateFavoriteStatusAsync(PointOfInterest poi)
+        {
+            await Init();
+
+            // Dùng SQL trực tiếp để loại bỏ mọi nghi ngờ về việc mapping Object
+            // SQLite lưu true/false là 1/0
+            string sql = "UPDATE Poi SET IsFavorite = ? WHERE Id = ?";
+            int val = poi.IsFavorite ? 1 : 0;
+
+            try
+            {
+                var rows = await _database!.ExecuteAsync(sql, val, poi.Id);
+                System.Diagnostics.Debug.WriteLine($"[DB] Update Id {poi.Id} to {val}. Rows affected: {rows}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DB ERROR] {ex.Message}");
+            }
+        }
+
+
         // hàm clear database để ở cuối cùng
         public async Task ClearAllDataAsync()
         {

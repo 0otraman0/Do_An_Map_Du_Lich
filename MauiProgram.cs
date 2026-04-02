@@ -27,6 +27,7 @@ namespace MauiAppMain
 #if ANDROID
             MapHandler.Mapper.AppendToMapping("DisableMyLocationButton", (handler, view) =>
             {
+
                 handler.PlatformView.GetMapAsync(new MapReadyCallback(map =>
                 {
                     map.UiSettings.MyLocationButtonEnabled = false;
@@ -44,6 +45,7 @@ namespace MauiAppMain
 #if DEBUG
             builder.Logging.AddDebug();
             #endif
+
 
             return builder.Build();
         }
