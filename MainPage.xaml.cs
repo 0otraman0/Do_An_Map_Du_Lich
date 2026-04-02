@@ -75,6 +75,8 @@ namespace MauiAppMain
             // ⚠️ Đừng clear DB ở đây (giải thích bên dưới)
 
             SearchEntry.Text = AppResource.Search_placeholder;
+            Favorite_Poi_button.Text = AppResource.Favorite_Poi;
+            All_Poi_button.Text = AppResource.All_Poi;
 
             // xin quyền (OK nhưng vẫn hơi nặng)
             var status = await Permissions.RequestAsync<Permissions.LocationAlways>();
@@ -103,6 +105,34 @@ namespace MauiAppMain
                     if (_pois.Count > 0)
                     {
                         LoadPoisOnMap();
+
+                var firstPoi = _pois[0];
+                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                    new Location(firstPoi.Latitude, firstPoi.Longitude),
+                    Distance.FromMeters(500)));
+            }
+
+            // start tracking user in real-time
+#if ANDROID
+            AndroidTtsService.OnSpeechCompleted = () =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    _isPlaying = false;
+                    UpdateAudioUI(false);
+                });
+            };
+
+            if (!LocationForegroundService.IsRunning)
+            {
+                var intent = new Android.Content.Intent(
+                Android.App.Application.Context,
+                typeof(LocationForegroundService));
+
+                Android.App.Application.Context.StartForegroundService(intent);
+            }
+#endif
+            MyMap.IsVisible = true;
 
                         var firstPoi = _pois[0];
                         MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
@@ -247,7 +277,7 @@ namespace MauiAppMain
             }
             else
             {
-                AudioStatusLabel.Text = "PHÁT AUDIO";
+                AudioStatusLabel.Text = "PHÁT AUDIO     ";
                 AudioIconBtn.Source = "play_icon.png";
             }
         }

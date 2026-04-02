@@ -29,7 +29,6 @@ public class LocationForegroundService : Service
 
         _cts = new CancellationTokenSource();
         _ = InitAndStartTracking(_cts.Token);
-        Task.Delay(10000); // wait for map to render
         _ = StartTracking(_cts.Token);
 
         return StartCommandResult.Sticky;
@@ -64,6 +63,7 @@ public class LocationForegroundService : Service
 
     async Task StartTracking(CancellationToken token)
     {
+        Task.Delay(5000); // wait for map to render
         try
         {
             while (!token.IsCancellationRequested)

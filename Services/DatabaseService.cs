@@ -12,8 +12,9 @@ namespace MauiAppMain.Services
         {
 
             if (_database != null)
+            {
                 return;
-            
+            }
             string dbPath = Path.Combine(FileSystem.AppDataDirectory, "poi.db");
             _database = new SQLiteAsyncConnection(dbPath);
 
@@ -32,37 +33,6 @@ namespace MauiAppMain.Services
             await Init();
             return await _database!.Table<PoiDescription>().ToListAsync();
         }
-        //public async Task<List<PointOfInterest>> GetPOIsAsync()
-        //{
-        //    await Init();
-        //    var lang = Preferences.Get("App_language", "en");
-        //    Console.WriteLine("Current language: " + lang);
-        //    var pois = await _database!.Table<Poi>().ToListAsync();
-        //    var translations = await _database.Table<PoiDescription>()
-        //        .Where(t => t.Language == lang)
-        //        .ToListAsync();
-
-        //    var result = pois.Select(p =>
-        //    {
-        //        var t = translations.FirstOrDefault(x => x.PoiId == p.Id);
-
-        //        var imageList = _database.Table<POIImage>()
-        //        .Where(i => i.POIId == p.Id).ToListasync();
-
-        //        System.Text.Json.JsonSerializer.Serialize(imageList);
-
-        //        return new PointOfInterest
-        //        {
-        //            Id = p.Id,
-        //            Latitude = p.Latitude,
-        //            Longitude = p.Longitude,
-        //            Name = t?.Name ?? "N/A",
-        //            Description = t?.Description ?? "",
-        //            ImageUrlsJson = p.ImageUrlsJson,
-        //        };
-        //    }).ToList();
-        //    return result;
-        //}
 
         public async Task<List<PointOfInterest>> GetPOIsAsync()
         {
@@ -88,7 +58,7 @@ namespace MauiAppMain.Services
                 var imageUrls = imageList.Select(i => i.Url).ToList();
 
                 var imageJson = JsonSerializer.Serialize(imageUrls);
-
+      
                 result.Add(new PointOfInterest
                 {
                     Id = p.Id,
@@ -96,11 +66,16 @@ namespace MauiAppMain.Services
                     Longitude = p.Longitude,
                     Name = t?.Name ?? "N/A",
                     Description = t?.Description ?? "",
-                    ImageUrlsJson = imageJson
+                    ImageUrlsJson = imageJson,
+                    IsFavorite = p.IsFavorite,
+                    priorityLevel = p.priorityLevel,
+                    Address = t?.Address ?? "",
                 });
             }
-
-            return result;
+            // trar về theo thứ tự ưu tiên
+            return result
+                .OrderByDescending(p => p.priorityLevel)
+                .ToList();
         }
 
         public async Task SavePoisAsync(List<Poi> pois)
@@ -142,11 +117,19 @@ namespace MauiAppMain.Services
         {
             await Init(); await _database!.UpdateAsync(poi);
         }
-        //public async Task List<<Poiimages>> GetAllImageAsync()
-        //{
-        //    await Init();
-        //    return await _database!.Table<Poi>().ToListAsync();
-        //}
+        public async Task UpdatePOIAsync(PointOfInterest poi)
+        {
+            await Init();
+
+            var dbPoi = await _database.Table<Poi>()
+                .FirstOrDefaultAsync(p => p.Id == poi.Id);
+
+            if (dbPoi != null)
+            {
+                dbPoi.IsFavorite = poi.IsFavorite; // IMPORTANT
+                await _database.UpdateAsync(dbPoi);
+            }
+        }
         public async Task DeletePOIAsync(int id)
         {
             await Init();
@@ -208,24 +191,6 @@ namespace MauiAppMain.Services
                 }
             }
         }
-        //public async Task AddPOIDescriptionAsync(PoiDescription poides)
-        //{
-        //    await Init();
-        //    await _database!.InsertAsync(poides);
-        //}
-
-        //public async Task AddTranslationAsync(PoiDescription translation)
-        //{
-        //    await Init();
-        //    await _database!.InsertAsync(translation);
-        //}
-        //public async Task<List<PoiDescription>> GetTranslationsAsync(string languageCode)
-        //{
-        //    await Init();
-        //    return await _database!.Table<PoiDescription>()
-        //        .Where(t => t.Language == languageCode)
-        //        .ToListAsync();
-        //}
 
         //hàm thêm ảnh
         public async Task AddImageAsync(int poiId, string urlItem)

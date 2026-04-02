@@ -2,6 +2,7 @@
 using global::Android.Content;
 using global::Android.Speech.Tts;
 using Java.Util;
+using static System.Net.Mime.MediaTypeNames;
 using Locale = Java.Util.Locale;
 using TextToSpeech = global::Android.Speech.Tts.TextToSpeech;
 
@@ -23,7 +24,7 @@ namespace MauiAppMain
             tts.SetOnUtteranceProgressListener(new MyListener());
         }
 
-        public static void Speak(string text)
+        public static void Speak(string text, bool flushQueue = false)
         {
             var voices = tts.Voices;
             var lang = Preferences.Get("App_language", "vi");
@@ -56,16 +57,21 @@ namespace MauiAppMain
 
             tts.SetPitch(1.0f);
             tts.SetSpeechRate(0.8f);
-            //tts.SetLanguage(Java.Util.Locale.VietNamese);
 
             queueCount++;
-            Console.WriteLine(locale);
-            tts.Speak(text, QueueMode.Add, null, "poiSpeech");
+
+            tts.Speak(text, flushQueue ? QueueMode.Flush : QueueMode.Add, null, Guid.NewGuid().ToString());
+            //tts.Speak(text, QueueMode.Add, null, "poiSpeech");
         }
 
         public static void Stop()
         {
-            tts?.Stop();
+            if (tts != null)
+            {
+                tts.Stop();        // Dừng ngay lập tức
+                tts.Shutdown();    // Giải phóng tài nguyên và xóa queue
+                tts = null;        // Reset đối tượng
+            }
             queueCount = 0;
         }
 

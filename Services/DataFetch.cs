@@ -26,7 +26,14 @@ public class DataFetch
             return;
         }
         Console.WriteLine("API request suscess");
-
+        if(IsLowStorage())
+        {
+            Console.WriteLine("Device is low on storage, requesting data with language filter");
+        }
+         else
+        {
+            Console.WriteLine("Device has sufficient storage, requesting all data");
+        }
         // Read response
         var json = await response.Content.ReadAsStringAsync();
             // Deserialize
@@ -78,7 +85,7 @@ public class DataFetch
         var pois = await _database.GetAllPoisAsync();
         foreach (var item in pois)
         {
-            Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id);
+            Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id );
         }
         //  3. SAVE DESCRIPTIONS
         if (result.Descriptions != null)
@@ -108,55 +115,51 @@ public class DataFetch
 
                     if (isLowStorage)
                     {
-                        // ✅ Just store URL
+                        //  Just store URL
                         await _database.AddImageAsync(poiId, urlItem);
                     }
                     else
                     {
-                        // ✅ Download image locally
-                        string localPath = await DownloadImageAsync(poiId, urlItem, _httpClient);
-                        if (localPath != null)
-                        {
-                            await _database.AddImageAsync(poiId, localPath);
-                        }
+                        //  Just store URL
+                        await _database.AddImageAsync(poiId, urlItem);
                     }
                 }
             }
         }
 
-        // 🔥 5. UPDATE LAST SYNC
+        //  5. UPDATE LAST SYNC
         Preferences.Set("LastSyncTime", result.LastUpdated);
         Console.WriteLine("Last update: " + Preferences.Get("LastSyncTime", 12L));
 
     }
-    private async Task<string> DownloadImageAsync(int poiId, string url, HttpClient _httpClient)
-    {
-        try
-        {
-            var bytes = await _httpClient.GetByteArrayAsync(url);
+    //private async Task<string> DownloadImageAsync(int poiId, string url, HttpClient _httpClient)
+    //{
+    //    try
+    //    {
+    //        var bytes = await _httpClient.GetByteArrayAsync(url);
 
-            string fileName = $"{poiId}_{Path.GetFileName(url)}";
+    //        string fileName = $"{poiId}_{Path.GetFileName(url)}";
 
-            string folder = Path.Combine(FileSystem.AppDataDirectory, $"POI_{poiId}");
+    //        string folder = Path.Combine(FileSystem.AppDataDirectory, $"POI_{poiId}");
 
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
+    //        if (!Directory.Exists(folder))
+    //            Directory.CreateDirectory(folder);
 
-            string fullPath = Path.Combine(folder, fileName);
+    //        string fullPath = Path.Combine(folder, fileName);
 
-            if (!File.Exists(fullPath))
-            {
-                await File.WriteAllBytesAsync(fullPath, bytes);
-            }
+    //        if (!File.Exists(fullPath))
+    //        {
+    //            await File.WriteAllBytesAsync(fullPath, bytes);
+    //        }
 
-            return fullPath;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Image download failed: {ex.Message}");
-            return null!;
-        }
-    }
+    //        return fullPath;
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine($"Image download failed: {ex.Message}");
+    //        return null!;
+    //    }
+    //}
 
 private bool IsLowStorage()
     {
@@ -175,7 +178,7 @@ private bool IsLowStorage()
             if(forlang == true)
             {
                 Console.WriteLine("Language changed, requesting data with language filter: " + lang);
-                return $"{baseUrl}?lastUpdated=0&lang={lang}";
+                return $"{baseUrl}?lastUpdated={LastUpdated}&lang={lang}";
             }
             Console.WriteLine("Device has low storage, requesting data with language filter: " + lang);
             return $"{baseUrl}?lastUpdated=0&lang={lang}";

@@ -16,8 +16,10 @@ namespace MauiAppMain.Models
         public double RadiusMeters { get; set; } = 0;
         public bool IsTriggered { get; set; } = false;
         public string ImageUrlsJson { get; set; }
-        public bool IsFavorite { get; set; } = false;
+        public bool IsFavorite { get; set; }
         public bool IsDeleted { get; set; }
+        [JsonPropertyName("Priority")]
+        public int priorityLevel { get; set; } = 0;
 
         [Ignore] // Không lưu cột này vào DB, chỉ dùng để hiển thị
         public List<string> ImageList => string.IsNullOrEmpty(ImageUrlsJson)

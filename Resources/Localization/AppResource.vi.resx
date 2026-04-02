@@ -129,4 +129,10 @@
   <data name="Volumn_bar" xml:space="preserve">
     <value>âm lượng</value>
   </data>
+  <data name="All_Poi" xml:space="preserve">
+    <value>Tất cả địa điểm</value>
+  </data>
+  <data name="Favorite_Poi" xml:space="preserve">
+    <value>Địa điểm yêu thích</value>
+  </data>
 </root>
