@@ -1,4 +1,5 @@
-﻿using MauiAppMain.Resources.Localization;
+﻿using FFImageLoading.Maui;
+using MauiAppMain.Resources.Localization;
 using MauiAppMain.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Maps.Handlers;
@@ -13,6 +14,7 @@ namespace MauiAppMain
             builder
                 .UseMauiApp<App>()
                 .UseMauiMaps()
+                .UseFFImageLoading()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

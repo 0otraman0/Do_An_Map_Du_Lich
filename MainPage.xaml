@@ -1,6 +1,8 @@
-﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             xmlns:ffimageloading="clr-namespace:FFImageLoading.Maui;assembly=FFImageLoading.Maui"
+             xmlns:resources="clr-namespace:MauiAppMain.Resources.Localization"
              x:Class="MauiAppMain.MainPage"
              Shell.NavBarIsVisible="false">
 
@@ -13,11 +15,34 @@
                   IsShowingUser="True"
                   MapClicked="OnMapClicked" />
 
+        <!-- LOADING HUD QUYỂN LỰC GẮN VÀO MAP TRÁNH CHE UI KHÁC -->
+        <Grid x:Name="LoadingOverlay"
+              BackgroundColor="#44000000"
+              InputTransparent="False"
+              IsVisible="True">
+              
+            <Frame BackgroundColor="White"
+                   CornerRadius="15"
+                   HasShadow="True"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   Padding="25,20">
+                   
+                <VerticalStackLayout Spacing="15" HorizontalOptions="Center">
+                    <ActivityIndicator IsRunning="True" Color="#00AEEF" WidthRequest="45" HeightRequest="45" HorizontalOptions="Center"/>
+                    <Label Text="Đang tải..." FontSize="14" TextColor="#555555" FontAttributes="Bold" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+                
+            </Frame>
+        </Grid>
+
 
         <!-- TOP OVERLAY -->
-        <Grid VerticalOptions="Start"
-      Padding="15,10"
-      RowDefinitions="Auto,Auto">
+        <Grid x:Name="TopOverlay"
+              IsEnabled="False"
+              VerticalOptions="Start"
+              Padding="15,10"
+              RowDefinitions="Auto,Auto">
 
             <!-- SEARCH BAR -->
             <Frame
@@ -45,7 +70,7 @@
                     <!-- Search -->
                     <Grid Grid.Column="1">
                         <Label
-                        Text="{Binding Search_placeholder}"
+                        Text="{x:Static resources:AppResource.Search_placeholder}"
                         x:Name="SearchEntry"
                         TextColor="#999999"
                         FontSize="20"
@@ -68,6 +93,7 @@
 
         <!-- TAB BAR -->
         <Border x:Name="MainTabBar"
+                IsEnabled="False"
                 VerticalOptions="End"
                 HeightRequest="75"
                 BackgroundColor="White">
@@ -80,7 +106,7 @@
                                      VerticalOptions="Center">
                     <Image Source="heart_icon.png" WidthRequest="24"/>
                     <Label x:Name="Favorite_Poi_button"
-                           Text="Poi yêu thích"
+                           Text="{x:Static resources:AppResource.Favorite_Poi}"
                            HorizontalOptions="Center"
                            FontSize="12"/>
                     <VerticalStackLayout.GestureRecognizers>
@@ -94,7 +120,7 @@
                                      VerticalOptions="Center">
                     <Image Source="list_icon.png" WidthRequest="24"/>
                     <Label x:Name="All_Poi_button"
-                        Text="Tất cả Poi"
+                        Text="{x:Static resources:AppResource.All_Poi}"
                            HorizontalOptions="Center"
                            FontSize="12"/>
                     <VerticalStackLayout.GestureRecognizers>
@@ -251,13 +277,14 @@
                     <Grid Grid.Row="1">
 
                         <CollectionView x:Name="AllPoiListView"
+                        ItemSizingStrategy="MeasureFirstItem"
                         SelectionMode="Single"
                         SelectionChanged="OnPoiItemSelected">
                             <CollectionView.ItemTemplate>
                                 <DataTemplate >
                                     <Grid RowDefinitions="Auto, Auto" Padding="15" ColumnDefinitions="100, *">
                                         <Border Grid.RowSpan="2" Grid.Column="0" StrokeShape="RoundRectangle 8" HeightRequest="80" WidthRequest="80">
-                                            <Image Aspect="AspectFill" Source="{Binding ImageList[0]}"/>
+                                            <Image Source="{Binding ImageList[0]}" Aspect="AspectFill" />
                                         </Border>
                                         <VerticalStackLayout Grid.Column="1" Margin="15,0,0,0" Spacing="2">
                                             <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
@@ -290,6 +317,7 @@
 
                         <CollectionView x:Name="FavoritePoiListView"
                         IsVisible="False" 
+                        ItemSizingStrategy="MeasureFirstItem"
                         ItemsUpdatingScrollMode="KeepItemsInView"
                         SelectionMode="Single"
                         SelectionChanged="OnPoiItemSelected">
@@ -297,7 +325,7 @@
                                 <DataTemplate>
                                     <Grid RowDefinitions="Auto, Auto" Padding="15" ColumnDefinitions="100, *">
                                         <Border Grid.RowSpan="2" Grid.Column="0" StrokeShape="RoundRectangle 8" HeightRequest="80" WidthRequest="80">
-                                            <Image Aspect="AspectFill" Source="{Binding ImageList[0]}"/>
+                                            <Image Source="{Binding ImageList[0]}" Aspect="AspectFill" />
                                         </Border>
                                         <VerticalStackLayout Grid.Column="1" Margin="15,0,0,0" Spacing="2">
                                             <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>

@@ -1,4 +1,4 @@
-﻿using MauiAppMain.Models;
+using MauiAppMain.Models;
 using MauiAppMain.Resources.Localization;
 using MauiAppMain.Services;
 using Microsoft.Maui.Controls.Maps;
@@ -100,35 +100,60 @@ namespace MauiAppMain
             if (_isLoaded) return;
             _isLoaded = true;
 
-            await Permissions.RequestAsync<Permissions.LocationAlways>();
+            // 0. BẬT BẢN ĐỒ NGAY LẬP TỨC ĐỂ ANDROID VẼ NATIVE MAP Ở BACKGROUND
+            MyMap.IsVisible = true;
 
-            // 1. Lấy dữ liệu từ DB
-            var list = await _database.GetPOIsAsync();
+            // 1. KÍCH HOẠT ĐA LUỒNG: Vừa xin quyền GPS, vừa chạy chìm lấy Gói Data
+            var permissionTask = Permissions.RequestAsync<Permissions.LocationAlways>();
+            var dbTask = Task.Run(async () => await _database.GetPOIsAsync());
 
-            // 2. Xóa sạch dữ liệu cũ (nếu có) và nạp mới
+            // 2. Chờ cả 2 nhiệm vụ hoàn tất song song (tiết kiệm 50% thời gian)
+            await Task.WhenAll(permissionTask, dbTask);
+            var list = await dbTask;
+
+            // 3. Xóa sạch dữ liệu cũ (nếu có) và nạp mới
             _pois.Clear();
             _favorites.Clear();
 
             foreach (var poi in list)
             {
-                _pois.Add(poi); // Nạp vào tab "Tất cả"
-                if (poi.IsFavorite)
-                {
-                    _favorites.Add(poi); // Nạp vào tab "Yêu thích"
-                }
+                _pois.Add(poi); 
+                if (poi.IsFavorite) _favorites.Add(poi); 
             }
 
-            // 3. Vẽ Map dựa trên AllPois
+            // 4. Bơm dữ liệu POI lên Map
             if (_pois.Count > 0)
             {
                 LoadPoisOnMap();
-                MyMap.IsVisible = true;
                 var firstPoi = _pois[0];
                 MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
                     new Location(firstPoi.Latitude, firstPoi.Longitude),
                     Distance.FromMeters(500)));
             }
 
+            // --- HACK WARM UP NATIVE VIEWS ---
+            // Ép MAUI phải biên dịch và bóc tách giao diện (Native UI) của List ngay lúc này 
+            // Do BottomSheet hiện tại đang nằm ngoài màn hình (TranslationY) nên user sẽ không thấy nó overlap
+            PoiListContainer.IsVisible = true;
+            AllPoiListView.IsVisible = true;
+            FavoritePoiListView.IsVisible = true; // Bật luôn tab Favorites để load sẵn bộ nhớ
+
+            // Rút ngắn trễ luồng xuống còn 100ms (Đủ để render MeasureFirstItem)
+            await Task.Delay(100);
+
+            // Sau khi dựng xong form thì đem giấu đi toàn bộ
+            PoiListContainer.IsVisible = false;
+            AllPoiListView.IsVisible = false;
+            FavoritePoiListView.IsVisible = false;
+            // -----------------------------------
+
+            // BÂY GIỜ MỚI MỞ KHÓA TƯƠNG TÁC CHUẨN XÁC
+            TopOverlay.IsEnabled = true;
+            MainTabBar.IsEnabled = true;
+
+            // VÀ KẾT THÚC VAI TRÒ CỦA ÁP PHÍCH LÀM MỜ
+            await LoadingOverlay.FadeTo(0, 50, Easing.Linear);
+            LoadingOverlay.IsVisible = false;
 #if ANDROID
             // Khởi chạy service ngầm (Chỉ 1 lần)
             if (!LocationForegroundService.IsRunning)
@@ -383,14 +408,14 @@ namespace MauiAppMain
             _sheetVisible = true;
             UpdateTabTitle();
 
-            // Bật cái này, ẩn cái kia - CỰC MƯỢT
-            AllPoiListView.IsVisible = true;
-            FavoritePoiListView.IsVisible = false;
-
             SinglePoiView.IsVisible = false;
             PoiListContainer.IsVisible = true;
 
-            await PoiSheet.TranslateTo(0, _sheetFullY, 150, Easing.Linear);
+            // Xử lý bật/tắt hiển thị danh sách NGAY LẬP TỨC để tránh dính list cũ (bug)
+            AllPoiListView.IsVisible = true;
+            FavoritePoiListView.IsVisible = false;
+
+            await PoiSheet.TranslateTo(0, _sheetFullY, 180, Easing.CubicOut);
         }
 
         private async void OnFavoriteTabClicked(object sender, EventArgs e)
@@ -399,14 +424,14 @@ namespace MauiAppMain
             _sheetVisible = true;
             UpdateTabTitle();
 
-            // Ẩn cái này, bật cái kia
-            AllPoiListView.IsVisible = false;
-            FavoritePoiListView.IsVisible = true;
-
             SinglePoiView.IsVisible = false;
             PoiListContainer.IsVisible = true;
 
-            await PoiSheet.TranslateTo(0, _sheetFullY, 150, Easing.Linear);
+            // Xử lý bật/tắt hiển thị danh sách NGAY LẬP TỨC
+            AllPoiListView.IsVisible = false;
+            FavoritePoiListView.IsVisible = true;
+
+            await PoiSheet.TranslateTo(0, _sheetFullY, 180, Easing.CubicOut);
         }
 
         void UpdateTabTitle()

@@ -42,10 +42,6 @@ public class DataFetch
         // Check if data is updated
         if (result == null || !result.Updated)
         {
-            //foreach (var item in await _database.Ge())
-            //{
-            //    Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id);
-            //}
             Console.WriteLine("No new data");
             return;
         }
@@ -107,61 +103,67 @@ public class DataFetch
             {
                 int poiId = int.Parse(kvp.Key);
                 var urls = kvp.Value;
+                if (urls == null || urls.Count == 0)
+                    continue;
+                await _database.DeleteImagesByPoiIdAsync(poiId);
 
-                foreach (var urlItem in urls)
-                {
-                    if (urlItem.EndsWith("/")) continue;
-                    if (string.IsNullOrWhiteSpace(urlItem)) continue;
+                // LOAD ẢNH MỚi
 
-                    if (isLowStorage)
+                    foreach (var urlItem in urls)
                     {
-                        //  Just store URL
-                        await _database.AddImageAsync(poiId, urlItem);
-                    }
-                    else
-                    {
-                        //  Just store URL
-                        await _database.AddImageAsync(poiId, urlItem);
-                    }
+                        if (urlItem.EndsWith("/")) continue;
+                        if (string.IsNullOrWhiteSpace(urlItem)) continue;
+
+                        //  Download and store local path
+                        var localPath = await DownloadImageAsync(poiId, urlItem);
+
+                        Console.WriteLine("Processing image URL for POI " + poiId + ": " + urlItem);
+
+                        if (!string.IsNullOrEmpty(localPath))
+                        {
+                            await _database.AddImageAsync(poiId, localPath); //  SAVE LOCAL PATH
+                        }
                 }
             }
         }
 
-        //  5. UPDATE LAST SYNC
+        var ImagePaths = await _database.GetAllImagesAsync();
+        foreach (var img in ImagePaths)
+        {
+            Console.WriteLine($" -> {img.Url}" );
+        }        //  5. UPDATE LAST SYNC
         Preferences.Set("LastSyncTime", result.LastUpdated);
         Console.WriteLine("Last update: " + Preferences.Get("LastSyncTime", 12L));
-
     }
-    //private async Task<string> DownloadImageAsync(int poiId, string url, HttpClient _httpClient)
-    //{
-    //    try
-    //    {
-    //        var bytes = await _httpClient.GetByteArrayAsync(url);
 
-    //        string fileName = $"{poiId}_{Path.GetFileName(url)}";
+    //hàm thêm ảnh
+    private async Task<string> DownloadImageAsync(int poiId, string url)
+    {
+        try
+        {
+            string fileName = $"{poiId}_{Path.GetFileName(url)}";
+            string folder = Path.Combine(FileSystem.AppDataDirectory, $"POI_{poiId}");
 
-    //        string folder = Path.Combine(FileSystem.AppDataDirectory, $"POI_{poiId}");
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
 
-    //        if (!Directory.Exists(folder))
-    //            Directory.CreateDirectory(folder);
+            string fullPath = Path.Combine(folder, fileName);
 
-    //        string fullPath = Path.Combine(folder, fileName);
+            // ALWAYS overwrite
+            var bytes = await _httpClient.GetByteArrayAsync(url);
+            await File.WriteAllBytesAsync(fullPath, bytes);
 
-    //        if (!File.Exists(fullPath))
-    //        {
-    //            await File.WriteAllBytesAsync(fullPath, bytes);
-    //        }
+            return fullPath;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Image download failed: {ex.Message}");
+            return null!;
+        }
+    }
 
-    //        return fullPath;
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        Console.WriteLine($"Image download failed: {ex.Message}");
-    //        return null!;
-    //    }
-    //}
 
-private bool IsLowStorage()
+    private bool IsLowStorage()
     {
         var (_, free) = _deviceInfoService.GetStorageInfo();
         double freeGB = free / (1024.0 * 1024 * 1024);
@@ -184,7 +186,7 @@ private bool IsLowStorage()
             return $"{baseUrl}?lastUpdated=0&lang={lang}";
         }
         Console.WriteLine("Device has sufficient storage, requesting all data");
-        return $"{baseUrl}?lastUpdated=0";
+        return $"{baseUrl}?lastUpdated={LastUpdated}";
     }
 }
 public class PoiApiResponse
