@@ -1,4 +1,4 @@
-﻿
+
 
 using PointOfInterest = MauiAppMain.Models.PointOfInterest;
 using MauiAppMain.Models;
@@ -113,18 +113,20 @@ namespace MauiAppMain
 
             if (_isLoaded) return;
 
-            try
-            {
-                // 1. Lấy dữ liệu ngầm (Luồng phụ)
-                var list = await Task.Run(() => _database.GetPOIsAsync());
-                var allList = list.ToList();
-                var favList = list.Where(p => p.IsFavorite).ToList();
+            // 0. BẬT BẢN ĐỒ NGAY LẬP TỨC ĐỂ ANDROID VẼ NATIVE MAP Ở BACKGROUND
+            MyMap.IsVisible = true;
 
-                // 2. Cập nhật dữ liệu lên UI (Luồng chính)
-                MainThread.BeginInvokeOnMainThread(async () =>
-                {
-                    _pois.Clear();
-                    _favorites.Clear();
+            // 1. KÍCH HOẠT ĐA LUỒNG: Vừa xin quyền GPS, vừa chạy chìm lấy Gói Data
+            var permissionTask = Permissions.RequestAsync<Permissions.LocationAlways>();
+            var dbTask = Task.Run(async () => await _database.GetPOIsAsync());
+
+            // 2. Chờ cả 2 nhiệm vụ hoàn tất song song (tiết kiệm 50% thời gian)
+            await Task.WhenAll(permissionTask, dbTask);
+            var list = await dbTask;
+
+            // 3. Xóa sạch dữ liệu cũ (nếu có) và nạp mới
+            _pois.Clear();
+            _favorites.Clear();
 
                     foreach (var p in allList) _pois.Add(p);
                     foreach (var f in favList) _favorites.Add(f);
@@ -139,25 +141,46 @@ namespace MauiAppMain
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Lỗi: {ex.Message}");
+                _pois.Add(poi); 
+                if (poi.IsFavorite) _favorites.Add(poi); 
             }
-        }
 
-        // Hàm phụ để tách code cho sạch sẽ, tránh rối mắt trong OnAppearing
-        private async void MoveMapToInitialLocation(PermissionStatus status)
-        {
-            Location targetLocation = null;
-            if (status == PermissionStatus.Granted)
+            // 4. Bơm dữ liệu POI lên Map
+            if (_pois.Count > 0)
             {
-                try
-                {
-                    targetLocation = await Geolocation.GetLocationAsync(
-                        new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(3)));
-                }
-                catch { }
+                LoadPoisOnMap();
+                var firstPoi = _pois[0];
+                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                    new Location(firstPoi.Latitude, firstPoi.Longitude),
+                    Distance.FromMeters(500)));
             }
 
-            if (targetLocation != null)
+            // --- HACK WARM UP NATIVE VIEWS ---
+            // Ép MAUI phải biên dịch và bóc tách giao diện (Native UI) của List ngay lúc này 
+            // Do BottomSheet hiện tại đang nằm ngoài màn hình (TranslationY) nên user sẽ không thấy nó overlap
+            PoiListContainer.IsVisible = true;
+            AllPoiListView.IsVisible = true;
+            FavoritePoiListView.IsVisible = true; // Bật luôn tab Favorites để load sẵn bộ nhớ
+
+            // Rút ngắn trễ luồng xuống còn 100ms (Đủ để render MeasureFirstItem)
+            await Task.Delay(100);
+
+            // Sau khi dựng xong form thì đem giấu đi toàn bộ
+            PoiListContainer.IsVisible = false;
+            AllPoiListView.IsVisible = false;
+            FavoritePoiListView.IsVisible = false;
+            // -----------------------------------
+
+            // BÂY GIỜ MỚI MỞ KHÓA TƯƠNG TÁC CHUẨN XÁC
+            TopOverlay.IsEnabled = true;
+            MainTabBar.IsEnabled = true;
+
+            // VÀ KẾT THÚC VAI TRÒ CỦA ÁP PHÍCH LÀM MỜ
+            await LoadingOverlay.FadeTo(0, 50, Easing.Linear);
+            LoadingOverlay.IsVisible = false;
+#if ANDROID
+            // Khởi chạy service ngầm (Chỉ 1 lần)
+            if (!LocationForegroundService.IsRunning)
             {
                 MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(targetLocation, Distance.FromMeters(500)));
             }

@@ -1,4 +1,4 @@
-﻿using MauiAppMain.Models;
+using MauiAppMain.Models;
 using SQLite;
 using System.Text.Json;
 
@@ -39,18 +39,32 @@ namespace MauiAppMain.Services
             await Init();
             var lang = Preferences.Get("App_language", "en");
 
-            // 1. Lấy toàn bộ dữ liệu từ các bảng chính về RAM một lần duy nhất
-            var allPois = await _database!.Table<Poi>().ToListAsync();
-            var allTranslations = await _database.Table<PoiDescription>().Where(t => t.Language == lang).ToListAsync();
-            //var allImages = await _database.Table<POIImage>().ToListAsync();
+            var pois = await _database!.Table<Poi>().ToListAsync();
+            var translations = await _database.Table<PoiDescription>()
+                .Where(t => t.Language == lang)
+                .ToListAsync();
+                
+            // LOAD TOÀN BỘ ẢNH LÊN RAM ĐỂ TRÁNH LỖI N+1 SQL QUERIES (Nguyên nhân chậm 5-6s)
+            var allImages = await _database.Table<POIImage>().ToListAsync();
 
-            // 2. Sử dụng LINQ để map dữ liệu trên RAM (cực nhanh)
-            var result = allPois.Select(p =>
+            var result = new List<PointOfInterest>();
+            foreach (var p in pois)
             {
                 var t = allTranslations.FirstOrDefault(x => x.PoiId == p.Id);
                 //var imageUrls = allImages.Where(i => i.POIId == p.Id).Select(i => i.Url).ToList();
 
-                return new PointOfInterest
+                // Truy xuất ảnh từ trên RAM thay vì gọi DB cho từng POI
+                var imageList = allImages.Where(i => i.POIId == p.Id).ToList();
+
+                // ONLY TAKE LOCAL FILES
+                var imagePaths = imageList
+                .Select(i => i.Url)
+                .ToList();
+
+
+                var imageJson = JsonSerializer.Serialize(imagePaths);
+      
+                result.Add(new PointOfInterest
                 {
                     Id = p.Id,
                     Latitude = p.Latitude,
@@ -184,26 +198,44 @@ namespace MauiAppMain.Services
         }
 
         //hàm thêm ảnh
-        public async Task AddImageAsync(int poiId, string urlItem)
+        public async Task AddImageAsync(int poiId, string path)
         {
-            await Init();
-
-            var existing = await _database!.Table<POIImage>()
-                .Where(i => i.POIId == poiId && i.Url == urlItem)
-                .FirstOrDefaultAsync();
-
-            if (existing != null)
-                return;
-
-            POIImage image = new POIImage()
+            try
             {
-                POIId = poiId,
-                Url = urlItem,
-                ImageName = Path.GetFileName(urlItem)
-            };
+                await Init();
 
-            await _database.InsertAsync(image);
+                var fileName = Path.GetFileName(path);
+                Console.WriteLine($"FileName: {fileName}");
+
+                var existing = await _database!.Table<POIImage>()
+                    .Where(i => i.POIId == poiId && i.ImageName == fileName)
+                    .FirstOrDefaultAsync();
+
+                if (existing != null)
+                {
+                    existing.Url = path;
+                    await _database.UpdateAsync(existing);
+                    return;
+                }
+
+                POIImage image = new POIImage()
+                {
+                    POIId = poiId,
+                    Url = path,
+                    ImageName = fileName
+                };
+
+                await _database.InsertAsync(image);
+
+                Console.WriteLine("Insert done");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ AddImageAsync ERROR: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+            }
         }
+
         //ham them language 
         public async Task AddLanguageAsync(Language_option language)
         {
@@ -299,6 +331,43 @@ namespace MauiAppMain.Services
             {
                 System.Diagnostics.Debug.WriteLine($"[DB ERROR] {ex.Message}");
             }
+        }
+
+        public async Task<List<POIImage>> GetAllImagesAsync()
+        {
+            await Init();
+            return await _database!.Table<POIImage>().ToListAsync();
+            
+        }
+
+        public async Task DeleteImagesByPoiIdAsync(int poiId)
+        {
+            await Init();
+
+            var images = await _database!.Table<POIImage>()
+                .Where(i => i.POIId == poiId)
+                .ToListAsync();
+
+            foreach (var img in images)
+            {
+                // 🔥 delete file local nếu tồn tại
+                if (File.Exists(img.Url))
+                {
+                    try
+                    {
+                        File.Delete(img.Url);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Delete file error: " + ex.Message);
+                    }
+                }
+
+                // 🔥 delete DB
+                await _database.DeleteAsync(img);
+            }
+
+            Console.WriteLine($"Deleted all images for POI {poiId}");
         }
 
 

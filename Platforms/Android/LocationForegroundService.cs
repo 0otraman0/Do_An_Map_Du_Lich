@@ -1,4 +1,4 @@
-﻿using Android.App;
+using Android.App;
 using Android.Content;
 using Android.Media;
 using Android.OS;
@@ -63,7 +63,8 @@ public class LocationForegroundService : Service
 
     async Task StartTracking(CancellationToken token)
     {
-        Task.Delay(5000); // wait for map to render
+        // QUAN TRỌNG: Phải có chữ await để luồng được nhường quyền (Bảo vệ App khỏi treo ANR)
+        await Task.Delay(5000); 
         try
         {
             while (!token.IsCancellationRequested)
@@ -84,7 +85,7 @@ public class LocationForegroundService : Service
 
                         double meters = distance * 1000;
 
-                        if (meters < 50)
+                        if (meters < poi.RadiusMeters)
                         {
                             if (_poiLastSpoken.TryGetValue(poi.Id, out var lastSpoken))
                             {
@@ -134,10 +135,7 @@ public class LocationForegroundService : Service
         await MainThread.InvokeOnMainThreadAsync(async () =>
         {
             try
-            {
-                // Thử phát âm câu đơn giản nhất, không dùng Options phức tạp
-                //await TextToSpeech.Default.SpeakAsync(poi.Description);
-                
+            {   
                 AndroidTtsService.Speak(poi.Description);
             }
             catch (Exception ex)
