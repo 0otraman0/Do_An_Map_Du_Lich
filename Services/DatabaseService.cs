@@ -37,45 +37,36 @@ namespace MauiAppMain.Services
         public async Task<List<PointOfInterest>> GetPOIsAsync()
         {
             await Init();
-
             var lang = Preferences.Get("App_language", "en");
-            Console.WriteLine("Current language: " + lang);
 
-            var pois = await _database!.Table<Poi>().ToListAsync();
-            var translations = await _database.Table<PoiDescription>()
-                .Where(t => t.Language == lang)
-                .ToListAsync();
+            // 1. Lấy toàn bộ dữ liệu từ các bảng chính về RAM một lần duy nhất
+            var allPois = await _database!.Table<Poi>().ToListAsync();
+            var allTranslations = await _database.Table<PoiDescription>().Where(t => t.Language == lang).ToListAsync();
+            //var allImages = await _database.Table<POIImage>().ToListAsync();
 
-            var result = new List<PointOfInterest>();
-            foreach (var p in pois)
+            // 2. Sử dụng LINQ để map dữ liệu trên RAM (cực nhanh)
+            var result = allPois.Select(p =>
             {
-                var t = translations.FirstOrDefault(x => x.PoiId == p.Id);
+                var t = allTranslations.FirstOrDefault(x => x.PoiId == p.Id);
+                //var imageUrls = allImages.Where(i => i.POIId == p.Id).Select(i => i.Url).ToList();
 
-                var imageList = await _database.Table<POIImage>()
-                .Where(i => i.POIId == p.Id)
-                .ToListAsync();
-
-                var imageUrls = imageList.Select(i => i.Url).ToList();
-
-                var imageJson = JsonSerializer.Serialize(imageUrls);
-      
-                result.Add(new PointOfInterest
+                return new PointOfInterest
                 {
                     Id = p.Id,
                     Latitude = p.Latitude,
                     Longitude = p.Longitude,
                     Name = t?.Name ?? "N/A",
                     Description = t?.Description ?? "",
-                    ImageUrlsJson = imageJson,
+                    //ImageUrlsJson = JsonSerializer.Serialize(imageUrls),
                     IsFavorite = p.IsFavorite,
                     priorityLevel = p.priorityLevel,
-                    Address = t?.Address ?? "",
-                });
-            }
-            // trar về theo thứ tự ưu tiên
-            return result
-                .OrderByDescending(p => p.priorityLevel)
-                .ToList();
+                    Address = t?.Address ?? ""
+                };
+            })
+            .OrderByDescending(p => p.priorityLevel)
+            .ToList();
+
+            return result;
         }
 
         public async Task SavePoisAsync(List<Poi> pois)
@@ -238,17 +229,41 @@ namespace MauiAppMain.Services
             await Init();
             return await _database!.Table<Language_option>().ToListAsync();
         }
+
+        //hàm search
         public async Task<List<PointOfInterest>> SearchPoiAsync(string keyword)
         {
             await Init();
 
-            keyword = keyword.ToLower();
+            var lang = Preferences.Get("App_language", "en");
 
-            return await _database!.Table<PointOfInterest>()
-                .Where(p => p.Name.ToLower().Contains(keyword) || p.Description.ToLower().Contains(keyword))
-                // limit suggestions use .take(5) if you want to limit the number of suggestions
+            // 🔥 Chỉ tìm theo NAME
+            var descriptions = await _database!.Table<PoiDescription>()
+                .Where(d => d.Language == lang &&
+                            d.Name.Contains(keyword))
                 .ToListAsync();
+
+            var pois = await _database.Table<Poi>().ToListAsync();
+
+            var result = (from d in descriptions
+                          join p in pois on d.PoiId equals p.Id
+                          select new PointOfInterest
+                          {
+                              Id = p.Id,
+                              Latitude = p.Latitude,
+                              Longitude = p.Longitude,
+                              Name = d.Name,
+                              Description = d.Description, // vẫn hiển thị, chỉ không search thôi
+                              IsFavorite = p.IsFavorite,
+                              priorityLevel = p.priorityLevel,
+                              Address = d.Address,
+                              ImageUrlsJson = ""
+                          })
+                          .ToList();
+
+            return result;
         }
+
         public async Task UpdateLanguageAsync(Language_option language)
         {
             await Init();

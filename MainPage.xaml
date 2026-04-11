@@ -4,7 +4,6 @@
              x:Class="MauiAppMain.MainPage"
              Shell.NavBarIsVisible="false">
 
-
     <Grid>
 
         <!-- MAP -->
@@ -13,56 +12,44 @@
                   IsShowingUser="True"
                   MapClicked="OnMapClicked" />
 
-
         <!-- TOP OVERLAY -->
-        <Grid VerticalOptions="Start"
-      Padding="15,10"
-      RowDefinitions="Auto,Auto">
-
-            <!-- SEARCH BAR -->
-            <Frame
-        Grid.Row="0"
-        HeightRequest="56"
-        CornerRadius="28"
-        BackgroundColor="White"
-        HasShadow="True"
-        Padding="15,0">
-                <Grid ColumnDefinitions="Auto,*,Auto"
-              VerticalOptions="Center">
+        <Grid VerticalOptions="Start" Padding="15,10" RowDefinitions="Auto,Auto">
+            <Frame Grid.Row="0"
+                   HeightRequest="56"
+                   CornerRadius="28"
+                   BackgroundColor="White"
+                   HasShadow="True"
+                   Padding="15,0">
+                <Grid ColumnDefinitions="Auto,*,Auto" VerticalOptions="Center">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnSearchTapped"/>
                     </Grid.GestureRecognizers>
 
                     <!-- Menu -->
-                    <ImageButton
-                Source="menu_2.svg"
-                BackgroundColor="Transparent"
-                WidthRequest="20"
-                HeightRequest="20"
-                VerticalOptions="Center"
-                Clicked="OnMenuClicked"/>
+                    <ImageButton Source="menu_2.svg"
+                                 BackgroundColor="Transparent"
+                                 WidthRequest="20"
+                                 HeightRequest="20"
+                                 VerticalOptions="Center"
+                                 Clicked="OnMenuClicked"/>
 
                     <!-- Search -->
                     <Grid Grid.Column="1">
-                        <Label
-                        Text="{Binding Search_placeholder}"
-                        x:Name="SearchEntry"
-                        TextColor="#999999"
-                        FontSize="20"
-                        HorizontalOptions="Center"
-                        VerticalOptions="Center"
-                        InputTransparent="True"
-                        Margin="0,0,0,0"/>
+                        <Label Text="{Binding Search_placeholder}"
+                               x:Name="SearchEntry"
+                               TextColor="#999999"
+                               FontSize="20"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"
+                               InputTransparent="True"/>
                     </Grid>
-                    <!--TextChanged="OnSearchTextChanged"-->
-                    <!-- Search Icon -->
-                    <ImageButton
-                Grid.Column="2"
-                Source="search_svg.png"
-                WidthRequest="18"
-                HeightRequest="18"/>
-                </Grid>
 
+                    <!-- Search Icon -->
+                    <ImageButton Grid.Column="2"
+                                 Source="search_svg.png"
+                                 WidthRequest="18"
+                                 HeightRequest="18"/>
+                </Grid>
             </Frame>
         </Grid>
 
@@ -71,16 +58,11 @@
                 VerticalOptions="End"
                 HeightRequest="75"
                 BackgroundColor="White">
-
             <Grid ColumnDefinitions="*,*">
-
                 <!-- FAVORITE -->
-                <VerticalStackLayout Grid.Column="0"
-                                     Spacing="5"
-                                     VerticalOptions="Center">
+                <VerticalStackLayout Grid.Column="0" Spacing="5" VerticalOptions="Center">
                     <Image Source="heart_icon.png" WidthRequest="24"/>
-                    <Label x:Name="Favorite_Poi_button"
-                           Text="Poi yêu thích"
+                    <Label Text="Poi yêu thích"
                            HorizontalOptions="Center"
                            FontSize="12"/>
                     <VerticalStackLayout.GestureRecognizers>
@@ -89,19 +71,15 @@
                 </VerticalStackLayout>
 
                 <!-- ALL -->
-                <VerticalStackLayout Grid.Column="1"
-                                     Spacing="5"
-                                     VerticalOptions="Center">
+                <VerticalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center">
                     <Image Source="list_icon.png" WidthRequest="24"/>
-                    <Label x:Name="All_Poi_button"
-                        Text="Tất cả Poi"
+                    <Label Text="Tất cả Poi"
                            HorizontalOptions="Center"
                            FontSize="12"/>
                     <VerticalStackLayout.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnAllPoiTabClicked"/>
                     </VerticalStackLayout.GestureRecognizers>
                 </VerticalStackLayout>
-
             </Grid>
         </Border>
 
@@ -109,7 +87,6 @@
         <Grid x:Name="PoiSheet"
               BackgroundColor="White"
               Padding="20,10,20,20">
-
             <Grid.GestureRecognizers>
                 <PanGestureRecognizer PanUpdated="OnSheetPanUpdated"/>
             </Grid.GestureRecognizers>
@@ -119,8 +96,9 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- HANDLE -->
-            <BoxView HeightRequest="5"
+            <!-- Handle -->
+            <BoxView Grid.Row="0"
+                     HeightRequest="5"
                      WidthRequest="50"
                      HorizontalOptions="Center"
                      Color="Gray"/>
@@ -128,210 +106,91 @@
             <!-- CONTENT -->
             <Grid Grid.Row="1">
 
-                <!-- SINGLE POI -->
-                <VerticalStackLayout x:Name="SinglePoiView" Spacing="5">
+                <!-- SINGLE POI VIEW -->
+                <VerticalStackLayout x:Name="SinglePoiView"
+                                     Spacing="5"
+                                     IsVisible="True">
 
-                    <Label x:Name="SingleTabTitleLabel" 
-           FontAttributes="Bold" 
-           IsVisible="{Binding Source={RelativeSource Self}, Path=Text, Converter={StaticResource StringToBoolConverter}}"/>
+                    <Label x:Name="SingleTabTitleLabel"
+                           FontAttributes="Bold"
+                           FontSize="20"
+                           TextColor="Black"/>
 
                     <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center" Margin="0,5">
-                        <Label Text="{Binding SelectedPoi.Name}" 
-               FontSize="22" 
-               FontAttributes="Bold" 
-               TextColor="Black" 
-               VerticalOptions="Center"/>
-
-                        <Button x:Name="SaveBtn" 
-                Grid.Column="1" 
-                BackgroundColor="#F0F0F0" 
-                TextColor="Black" 
-                CornerRadius="20" 
-                HeightRequest="40" 
-                Padding="15,0" 
-                FontSize="13" 
-                Clicked="OnSaveClicked" 
-                VerticalOptions="Center">
-                            <Button.ImageSource>
-                                <FontImageSource Glyph="🤍" Size="20" Color="Gray"/>
-                            </Button.ImageSource>
+                        <Label Text="{Binding SelectedPoi.Name}"
+                               FontSize="22"
+                               FontAttributes="Bold"
+                               TextColor="Black"
+                               VerticalOptions="Center"/>
+                        <Button x:Name="SaveBtn"
+                                Grid.Column="1"
+                                BackgroundColor="#F0F0F0"
+                                CornerRadius="20"
+                                HeightRequest="40"
+                                Padding="15,0"
+                                Clicked="OnSaveClicked"
+                                VerticalOptions="Center">
                         </Button>
                     </Grid>
 
-                    <Label Text="{Binding SelectedPoi.Description}" 
-           FontSize="15" 
-           TextColor="#444444" 
-           Margin="0,0,0,10"/>
+                    <Label Text="{Binding SelectedPoi.Description}"
+                           FontSize="15"
+                           TextColor="#444444"
+                           Margin="0,0,0,10"/>
 
+                    <!-- Audio -->
                     <Frame BackgroundColor="#F1F3F4"
-           CornerRadius="30"
-           HasShadow="False"
-           Padding="15,10"
-           Margin="0,10">
-
-                        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="15">
-
+                           CornerRadius="30"
+                           Padding="15,10"
+                           Margin="0,10">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
                             <ImageButton x:Name="AudioIconBtn"
-                         Source="play_icon.png"
-                         BackgroundColor="#00AEEF"
-                         WidthRequest="45"
-                         HeightRequest="45"
-                         CornerRadius="22"
-                         Padding="12"
-                         Clicked="OnAudioToggleClicked"/>
-
-                            <VerticalStackLayout Grid.Column="1"
-                                 VerticalOptions="Center"
-                                 Spacing="5">
-
+                                         Source="play_icon.png"
+                                         BackgroundColor="#00AEEF"
+                                         WidthRequest="45"
+                                         HeightRequest="45"
+                                         CornerRadius="22"
+                                         Clicked="OnAudioToggleClicked"/>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="5">
                                 <Label x:Name="AudioStatusLabel"
-                       Text="PHÁT AUDIO"
-                       FontSize="13"
-                       FontAttributes="Bold"
-                       TextColor="#005670" />
-
-                                <Grid x:Name="ProgressContainer" HeightRequest="4">
-                                    <BoxView BackgroundColor="#D6D6D6"
-                             CornerRadius="2"
-                             HorizontalOptions="FillAndExpand" />
-
+                                       Text="PHÁT AUDIO"
+                                       FontAttributes="Bold"
+                                       FontSize="13"
+                                       TextColor="#005670"/>
+                                <Grid HeightRequest="4">
+                                    <BoxView BackgroundColor="#D6D6D6" CornerRadius="2" HorizontalOptions="FillAndExpand"/>
                                     <BoxView x:Name="AudioProgressBar"
-                             BackgroundColor="#00AEEF"
-                             CornerRadius="2"
-                             HorizontalOptions="FillAndExpand"
-                             ScaleX="0"
-                             AnchorX="0" />
+                                             BackgroundColor="#00AEEF"
+                                             CornerRadius="2"
+                                             HorizontalOptions="FillAndExpand"
+                                             ScaleX="0"
+                                             AnchorX="0"/>
                                 </Grid>
                             </VerticalStackLayout>
                         </Grid>
                     </Frame>
 
-                    <CollectionView ItemsSource="{Binding SelectedPoi.ImageList}" 
-                HeightRequest="220"
-                HorizontalScrollBarVisibility="Never">
+                    <!-- Images -->
+                    <CollectionView ItemsSource="{Binding SelectedPoi.ImageList}"
+                                    HeightRequest="220"
+                                    HorizontalScrollBarVisibility="Never">
                         <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Horizontal" 
-                           ItemSpacing="8" />
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
                         </CollectionView.ItemsLayout>
-
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Frame CornerRadius="10" 
-                   Padding="0" 
-                   Margin="0"
-                   IsClippedToBounds="True" 
-                   WidthRequest="300" 
-                   HasShadow="False">
-                                    <Image Source="{Binding}" 
-                       Aspect="AspectFill" 
-                       HeightRequest="220"/>
+                                <Frame CornerRadius="10" Padding="0" IsClippedToBounds="True"
+                                       WidthRequest="300" HasShadow="False">
+                                    <Image Source="{Binding}" Aspect="AspectFill" HeightRequest="220"/>
                                 </Frame>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
-
-                    <IndicatorView x:Name="indicatorView" 
-               HorizontalOptions="Center" 
-               IndicatorColor="LightGray" 
-               SelectedIndicatorColor="DeepSkyBlue" 
-               Margin="0,10,0,0" />
-
                 </VerticalStackLayout>
 
-                <!-- LIST -->
-                <Grid x:Name="PoiListContainer" IsVisible="False" RowDefinitions="Auto,*">
-                    <Label x:Name="CurrentTabLabel"
-           Grid.Row="0"
-           Text="Tất cả POI"
-           FontSize="20"
-           FontAttributes="Bold"
-           TextColor="Black"
-           Padding="15,10,15,5"/>
-
-                    <Grid Grid.Row="1">
-
-                        <CollectionView x:Name="AllPoiListView"
-                        SelectionMode="Single"
-                        SelectionChanged="OnPoiItemSelected">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate >
-                                    <Grid RowDefinitions="Auto, Auto" Padding="15" ColumnDefinitions="100, *">
-                                        <Border Grid.RowSpan="2" Grid.Column="0" StrokeShape="RoundRectangle 8" HeightRequest="80" WidthRequest="80">
-                                            <Image Aspect="AspectFill" Source="{Binding ImageList[0]}"/>
-                                        </Border>
-                                        <VerticalStackLayout Grid.Column="1" Margin="15,0,0,0" Spacing="2">
-                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
-                                            <Label Text="{Binding Description}" MaxLines="2" FontSize="13" TextColor="Gray"/>
-                                        </VerticalStackLayout>
-                                        <Button Grid.Column="1" HorizontalOptions="End" VerticalOptions="Start"
-                                Clicked="OnFavoriteToggleClicked" CommandParameter="{Binding .}"
-                                BackgroundColor="Transparent" WidthRequest="44" HeightRequest="44">
-                                            <Button.ImageSource>
-                                                <FontImageSource Glyph="🤍" Color="Gray" Size="22"/>
-                                            </Button.ImageSource>
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Style.Triggers>
-                                                        <DataTrigger TargetType="Button" Binding="{Binding IsFavorite}" Value="True">
-                                                            <Setter Property="ImageSource">
-                                                                <Setter.Value>
-                                                                    <FontImageSource Glyph="❤️" Color="DeepSkyBlue" Size="22"/>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </Grid>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
-
-                        <CollectionView x:Name="FavoritePoiListView"
-                        IsVisible="False" 
-                        ItemsUpdatingScrollMode="KeepItemsInView"
-                        SelectionMode="Single"
-                        SelectionChanged="OnPoiItemSelected">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid RowDefinitions="Auto, Auto" Padding="15" ColumnDefinitions="100, *">
-                                        <Border Grid.RowSpan="2" Grid.Column="0" StrokeShape="RoundRectangle 8" HeightRequest="80" WidthRequest="80">
-                                            <Image Aspect="AspectFill" Source="{Binding ImageList[0]}"/>
-                                        </Border>
-                                        <VerticalStackLayout Grid.Column="1" Margin="15,0,0,0" Spacing="2">
-                                            <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16" TextColor="Black"/>
-                                            <Label Text="{Binding Description}" MaxLines="2" FontSize="13" TextColor="Gray"/>
-                                        </VerticalStackLayout>
-                                        <Button Grid.Column="1" HorizontalOptions="End" VerticalOptions="Start"
-                                Clicked="OnFavoriteToggleClicked" CommandParameter="{Binding .}"
-                                BackgroundColor="Transparent" WidthRequest="44" HeightRequest="44">
-                                            <Button.ImageSource>
-                                                <FontImageSource Glyph="🤍" Color="Gray" Size="22"/>
-                                            </Button.ImageSource>
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Style.Triggers>
-                                                        <DataTrigger TargetType="Button" Binding="{Binding IsFavorite}" Value="True">
-                                                            <Setter Property="ImageSource">
-                                                                <Setter.Value>
-                                                                    <FontImageSource Glyph="❤️" Color="DeepSkyBlue" Size="22"/>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </Grid>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
-                    </Grid>
-                </Grid>
-
+                <!-- POI LIST CONTAINER (chỉ 1 CollectionView) -->
+               
             </Grid>
         </Grid>
-
     </Grid>
 </ContentPage>
