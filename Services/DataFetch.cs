@@ -26,18 +26,18 @@ public class DataFetch
             return;
         }
         Console.WriteLine("API request suscess");
-        if(IsLowStorage())
+        if (IsLowStorage())
         {
             Console.WriteLine("Device is low on storage, requesting data with language filter");
         }
-         else
+        else
         {
             Console.WriteLine("Device has sufficient storage, requesting all data");
         }
         // Read response
         var json = await response.Content.ReadAsStringAsync();
-            // Deserialize
-            var result = JsonSerializer.Deserialize<PoiApiResponse>(json);
+        // Deserialize
+        var result = JsonSerializer.Deserialize<PoiApiResponse>(json);
         Console.WriteLine(json);
         // Check if data is updated
         if (result == null || !result.Updated)
@@ -61,7 +61,7 @@ public class DataFetch
             }
         }
         // 2. SAVE LANGUAGE OPTIONS
-        if (result.Languages !=null)
+        if (result.Languages != null)
         {
             foreach (var lang in result.Languages)
             {
@@ -81,7 +81,7 @@ public class DataFetch
         var pois = await _database.GetAllPoisAsync();
         foreach (var item in pois)
         {
-            Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id );
+            Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id);
         }
         //  3. SAVE DESCRIPTIONS
         if (result.Descriptions != null)
@@ -109,20 +109,20 @@ public class DataFetch
 
                 // LOAD ẢNH MỚi
 
-                    foreach (var urlItem in urls)
+                foreach (var urlItem in urls)
+                {
+                    if (urlItem.EndsWith("/")) continue;
+                    if (string.IsNullOrWhiteSpace(urlItem)) continue;
+
+                    //  Download and store local path
+                    var localPath = await DownloadImageAsync(poiId, urlItem);
+
+                    Console.WriteLine("Processing image URL for POI " + poiId + ": " + urlItem);
+
+                    if (!string.IsNullOrEmpty(localPath))
                     {
-                        if (urlItem.EndsWith("/")) continue;
-                        if (string.IsNullOrWhiteSpace(urlItem)) continue;
-
-                        //  Download and store local path
-                        var localPath = await DownloadImageAsync(poiId, urlItem);
-
-                        Console.WriteLine("Processing image URL for POI " + poiId + ": " + urlItem);
-
-                        if (!string.IsNullOrEmpty(localPath))
-                        {
-                            await _database.AddImageAsync(poiId, localPath); //  SAVE LOCAL PATH
-                        }
+                        await _database.AddImageAsync(poiId, localPath); //  SAVE LOCAL PATH
+                    }
                 }
             }
         }
@@ -130,7 +130,7 @@ public class DataFetch
         var ImagePaths = await _database.GetAllImagesAsync();
         foreach (var img in ImagePaths)
         {
-            Console.WriteLine($" -> {img.Url}" );
+            Console.WriteLine($" -> {img.Url}");
         }        //  5. UPDATE LAST SYNC
         Preferences.Set("LastSyncTime", result.LastUpdated);
         Console.WriteLine("Last update: " + Preferences.Get("LastSyncTime", 12L));
@@ -177,7 +177,7 @@ public class DataFetch
         if (IsLowStorage())
         {
             string lang = Preferences.Get("App_language", "en");
-            if(forlang == true)
+            if (forlang == true)
             {
                 Console.WriteLine("Language changed, requesting data with language filter: " + lang);
                 return $"{baseUrl}?lastUpdated={LastUpdated}&lang={lang}";

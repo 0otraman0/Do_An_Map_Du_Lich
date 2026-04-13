@@ -1,6 +1,3 @@
-
-
-using PointOfInterest = MauiAppMain.Models.PointOfInterest;
 using MauiAppMain.Models;
 using MauiAppMain.Resources.Localization;
 using MauiAppMain.Services;
@@ -8,7 +5,6 @@ using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 
 namespace MauiAppMain
 {
@@ -18,10 +14,10 @@ namespace MauiAppMain
 
 
         // Hai biến để bật tắt nhanh Tab
-        //private bool _isAllTabVisible = true;
-        //public bool IsAllTabVisible { get => _isAllTabVisible; set { _isAllTabVisible = value; OnPropertyChanged(); } }
-        //private bool _isFavoriteTabVisible = false;
-        //public bool IsFavoriteTabVisible { get => _isFavoriteTabVisible; set { _isFavoriteTabVisible = value; OnPropertyChanged(); } }
+        private bool _isAllTabVisible = true;
+        public bool IsAllTabVisible { get => _isAllTabVisible; set { _isAllTabVisible = value; OnPropertyChanged(); } }
+        private bool _isFavoriteTabVisible = false;
+        public bool IsFavoriteTabVisible { get => _isFavoriteTabVisible; set { _isFavoriteTabVisible = value; OnPropertyChanged(); } }
 
         // SERVICES
         private readonly DatabaseService _database;
@@ -31,39 +27,32 @@ namespace MauiAppMain
         // DATA
         private ObservableCollection<PointOfInterest> _pois = new();
         private ObservableCollection<PointOfInterest> _favorites = new();
-        //private ObservableCollection<PointOfInterest> _displayedPois = new();
+        private ObservableCollection<PointOfInterest> _displayedPois = new();
 
         private Dictionary<Pin, PointOfInterest> _pinPoiMap = new();
 
 
-        private CancellationTokenSource? _ttsCts;
-        private CancellationTokenSource? _timerCts;
-        private CancellationTokenSource? _cts;
-        private PointOfInterest? _selectedPoi;
-        private PointOfInterest? _lastSpokenPoi;
-
-        private bool _isDataLoaded = false; // Biến cờ
+        private CancellationTokenSource _ttsCts;
+        private CancellationTokenSource _timerCts;
+        private CancellationTokenSource _cts;
 
         // UI STATE
         private bool _sheetVisible = false;
         private bool _mapInitialized = false;
         private bool _isPlaying = false;
         private int _audioSessionId = 0;
-        //private int _currentTab = 0;
-        bool movedToUser = false;
-
-        private double _lastLat = 0;
-        private double _lastLng = 0;
-
-        bool _isLoaded = false;
-
-        private bool _isMapLoading = false; // Biến cờ ngăn chặn nạp chồng
+        private int _currentTab = 0;
+        private Pin _lastHighlightedPin; // Lưu lại để xóa nhãn điểm cũ
 
         // BOTTOM SHEET
         private double _sheetFullY = 10;
         private double _sheetHalfY;
         private double _sheetHiddenY;
         private double _startY;
+
+        // SELECTION
+        private PointOfInterest _selectedPoi;
+        private PointOfInterest _lastSpokenPoi;
 
         public PointOfInterest SelectedPoi
         {
@@ -83,35 +72,34 @@ namespace MauiAppMain
             _dataFetch = dataFetch;
             BindingContext = this;
 
-            // === PHẢI CÓ 2 DÒNG NÀY ===
-            MyMap.PropertyChanged += OnMapPropertyChanged;
-            MyMap.IsVisible = true;
-
-            // Gán ItemsSource cho CollectionView mới
-            //PoiListView.ItemsSource = _displayedPois;
+            // Gán ItemsSource một lần duy nhất tại Constructor
+            AllPoiListView.ItemsSource = _pois;
+            FavoritePoiListView.ItemsSource = _favorites;
 
             LanguageService.LoadSavedLanguage();
         }
 
-        //private Task FilterDisplayedPois()
-        //{
-        //    var targetSource = _currentTab == 0 ? _pois : _favorites;
+        bool _isLoaded = false;
 
-        //    _displayedPois.Clear();
+        private void FilterDisplayedPois()
+        {
+            // Xác định danh sách nguồn dựa trên Tab hiện tại
+            var targetSource = _currentTab == 0 ? _pois : _favorites;
 
-        //    foreach (var poi in targetSource)
-        //    {
-        //        _displayedPois.Add(poi);
-        //    }
-
-        //    return Task.CompletedTask;
-        //}
+            // Chỉ xóa và thêm phần tử vào Collection hiện tại để UI không bị nạp lại toàn bộ
+            _displayedPois.Clear();
+            foreach (var poi in targetSource)
+            {
+                _displayedPois.Add(poi);
+            }
+        }
 
         protected override async void OnAppearing()
         {
             base.OnAppearing();
 
             if (_isLoaded) return;
+            _isLoaded = true;
 
             // 0. BẬT BẢN ĐỒ NGAY LẬP TỨC ĐỂ ANDROID VẼ NATIVE MAP Ở BACKGROUND
             MyMap.IsVisible = true;
@@ -128,21 +116,10 @@ namespace MauiAppMain
             _pois.Clear();
             _favorites.Clear();
 
-                    foreach (var p in allList) _pois.Add(p);
-                    foreach (var f in favList) _favorites.Add(f);
-
-                    var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-                    MoveMapToInitialLocation(status);
-
-                    await Task.Delay(1000);
-                    LoadPoisOnMap();
-                    _isLoaded = true;
-                });
-            }
-            catch (Exception ex)
+            foreach (var poi in list)
             {
-                _pois.Add(poi); 
-                if (poi.IsFavorite) _favorites.Add(poi); 
+                _pois.Add(poi);
+                if (poi.IsFavorite) _favorites.Add(poi);
             }
 
             // 4. Bơm dữ liệu POI lên Map
@@ -182,14 +159,10 @@ namespace MauiAppMain
             // Khởi chạy service ngầm (Chỉ 1 lần)
             if (!LocationForegroundService.IsRunning)
             {
-                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(targetLocation, Distance.FromMeters(500)));
+                var intent = new Android.Content.Intent(Android.App.Application.Context, typeof(LocationForegroundService));
+                Android.App.Application.Context.StartForegroundService(intent);
             }
-            else if (_pois.Count > 0)
-            {
-                var first = _pois[0];
-                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                    new Location(first.Latitude, first.Longitude), Distance.FromMeters(500)));
-            }
+#endif
         }
 
         protected override void OnSizeAllocated(double width, double height)
@@ -203,53 +176,19 @@ namespace MauiAppMain
                 PoiSheet.TranslationY = _sheetHiddenY;
         }
 
-        private async void OnMapPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(MyMap.VisibleRegion))
-            {
-                if (_isMapLoading) return;
-                _isMapLoading = true;
-
-                // Đợi 1 chút để người dùng ngừng lướt hẳn rồi mới vẽ Pin (tránh giật)
-                await Task.Delay(300);
-                LoadPoisOnMap();
-
-                _isMapLoading = false;
-            }
-        }
-
         // ---------------- MAP ----------------
-        private void LoadPoisOnMap()
+        void LoadPoisOnMap()
         {
-            if (_pois == null || _pois.Count == 0 || MyMap == null) return;
-
-            var region = MyMap.VisibleRegion;
-            if (region == null) return;
-
-            var center = region.Center;
-
-            if (_lastLat != 0 && Location.CalculateDistance(center, new Location(_lastLat, _lastLng), DistanceUnits.Kilometers) < 0.1)
-                return;
-
-            _lastLat = center.Latitude;
-            _lastLng = center.Longitude;
-
-            var visiblePois = _pois
-                .Where(p => Location.CalculateDistance(center, new Location(p.Latitude, p.Longitude), DistanceUnits.Kilometers) < 2)
-                .Take(30)
-                .ToList();
-
-            // Đã ở MainThread rồi, không cần BeginInvoke lồng nữa
             MyMap.Pins.Clear();
             _pinPoiMap.Clear();
 
-            foreach (var poi in visiblePois)
+            foreach (var poi in _pois) // Dùng AllPois thay cho _pois
             {
                 var pin = new Pin
                 {
                     Label = poi.Name,
-                    Location = new Location(poi.Latitude, poi.Longitude),
-                    Type = PinType.Place
+                    Address = poi.Address, // Dùng Address cho chuẩn
+                    Location = new Location(poi.Latitude, poi.Longitude)
                 };
                 pin.MarkerClicked += OnPinClicked;
                 MyMap.Pins.Add(pin);
@@ -262,51 +201,84 @@ namespace MauiAppMain
             e.HideInfoWindow = true;
 
             if (sender is Pin pin && _pinPoiMap.TryGetValue(pin, out var poi))
-                await ShowPoiWithTransition(poi);
+                await FocusOnPoi(poi);
         }
 
-        // ---------------- BOTTOM SHEET ----------------
-        async Task ShowPoiWithTransition(PointOfInterest poi)
-        {
-            SelectedPoi = poi;
 
-            if (!_sheetVisible)
-            {
-                PoiSheet.TranslationY = _sheetHalfY;
-                _sheetVisible = true;
-            }
-            //UpdateTabTitle();
-
-            SinglePoiView.IsVisible = true;
-            //PoiListContainer.IsVisible = false;
-
-            await PoiSheet.TranslateTo(0, _sheetHalfY, 200);
-        }
-
-        private async Task HandlePoiSelected(PointOfInterest poi)
+        private async Task FocusOnPoi(PointOfInterest poi)
         {
             if (poi == null) return;
 
-            // Bước 1: Bay bản đồ đến vị trí POI
-            MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                new Location(poi.Latitude, poi.Longitude),
-                Distance.FromMeters(400)));
+            // 1. Reset nhãn của Pin cũ (Dùng MainThread để an toàn tuyệt đối)
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_lastHighlightedPin != null)
+                {
+                    _lastHighlightedPin.Label = string.Empty;
+                }
 
-            // Bước 2: Gọi hàm UI bạn đã viết sẵn để hiện Bottom Sheet
+                // Tìm Pin mới dựa trên tọa độ
+                var targetPin = MyMap.Pins.FirstOrDefault(p =>
+                    Math.Abs(p.Location.Latitude - poi.Latitude) < 0.0001 &&
+                    Math.Abs(p.Location.Longitude - poi.Longitude) < 0.0001);
+
+                if (targetPin != null)
+                {
+                    targetPin.Label = poi.Name;
+                    _lastHighlightedPin = targetPin;
+                }
+            });
+
+            // 2. Di chuyển Camera (Chỉ thực hiện 1 lần ở đây)
+            double latitudeOffset = 0.002;
+            var cameraLocation = new Location(poi.Latitude - latitudeOffset, poi.Longitude);
+            MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(cameraLocation, Distance.FromMeters(300)));
+
+            // 3. Hiển thị Bottom Sheet (Gọi hàm Transition nhưng ĐÃ BỎ MoveToRegion bên trong đó)
             await ShowPoiWithTransition(poi);
+        }
+
+
+        // ---------------- BOTTOM SHEET ----------------
+        private async Task ShowPoiWithTransition(PointOfInterest poi)
+        {
+            if (poi == null) return;
+            SelectedPoi = poi;
+
+            // Cập nhật trạng thái hiển thị
+            if (!_sheetVisible)
+            {
+                PoiSheet.TranslationY = _sheetHiddenY;
+                _sheetVisible = true;
+            }
+
+            UpdateTabTitle();
+            UpdateSaveButtonUI(poi); // Cập nhật luôn icon trái tim
+
+            SinglePoiView.IsVisible = true;
+            PoiListContainer.IsVisible = false;
+
+            // Hiệu ứng trượt lên
+            await PoiSheet.TranslateTo(0, _sheetHalfY, 250, Easing.CubicOut);
         }
 
         async Task HideBottomSheet()
         {
             _sheetVisible = false;
-            // Xóa đoạn lọc danh sách ở đây đi, vì mình đã xử lý nó ở ToggleFavorite rồi
+
+            // QUAN TRỌNG: Trước khi đóng, lọc lại danh sách _favorites 
+            // để loại bỏ những điểm người dùng đã bấm "bỏ thích" (màu xám)
+            var itemsToRemove = _favorites.Where(f => !f.IsFavorite).ToList();
+            foreach (var item in itemsToRemove)
+            {
+                _favorites.Remove(item);
+            }
+
             await PoiSheet.TranslateTo(0, _sheetHiddenY, 150);
         }
 
         private async void OnSheetPanUpdated(object sender, PanUpdatedEventArgs e)
         {
-            PoiSheet.AbortAnimation("TranslationY");
-
             switch (e.StatusType)
             {
                 case GestureStatus.Started:
@@ -331,20 +303,19 @@ namespace MauiAppMain
                     double currentY = PoiSheet.TranslationY;
 
                     // 1. Nếu vuốt xuống quá thấp -> Ẩn luôn
-                    double quarter = (_sheetFullY + _sheetHalfY) / 2;
-                    double threeQuarter = (_sheetHalfY + _sheetHiddenY) / 2;
-
-                    if (currentY < quarter)
-                    {
-                        await PoiSheet.TranslateTo(0, _sheetFullY, 200, Easing.CubicOut);
-                    }
-                    else if (currentY < threeQuarter)
-                    {
-                        await PoiSheet.TranslateTo(0, _sheetHalfY, 200, Easing.CubicOut);
-                    }
-                    else
+                    if (currentY > _sheetHalfY + 100)
                     {
                         await HideBottomSheet();
+                    }
+                    // 2. Nếu ở gần phía trên -> Snap lên Full
+                    else if (currentY < (_sheetFullY + _sheetHalfY) / 2)
+                    {
+                        await PoiSheet.TranslateTo(0, _sheetFullY, 250, Easing.CubicOut);
+                    }
+                    // 3. Còn lại -> Snap về giữa (Half)
+                    else
+                    {
+                        await PoiSheet.TranslateTo(0, _sheetHalfY, 250, Easing.CubicOut);
                     }
                     break;
             }
@@ -407,24 +378,35 @@ namespace MauiAppMain
         {
             if (poi == null) return;
 
-            poi.IsFavorite = !poi.IsFavorite;
-
-            if (poi.IsFavorite)
+            // 1. Tìm đối tượng gốc trong danh sách chính để đảm bảo đồng bộ UI hoàn toàn
+            var mainPoi = _pois.FirstOrDefault(p => p.Id == poi.Id);
+            if (mainPoi != null)
             {
-                if (!_favorites.Any(f => f.Id == poi.Id))
-                    _favorites.Add(poi);
+                mainPoi.IsFavorite = !mainPoi.IsFavorite;
+                // Nếu đối tượng truyền vào khác đối tượng gốc thì cập nhật cả hai
+                if (mainPoi != poi) poi.IsFavorite = mainPoi.IsFavorite;
             }
             else
             {
-                var toRemove = _favorites.FirstOrDefault(f => f.Id == poi.Id);
-                if (toRemove != null)
-                    _favorites.Remove(toRemove);
+                poi.IsFavorite = !poi.IsFavorite;
             }
 
-            // DB chạy nền
-            _ = Task.Run(() => _database.UpdateFavoriteStatusAsync(poi));
+            // 2. Cập nhật danh sách Favorite trên RAM
+            if (poi.IsFavorite)
+            {
+                if (!_favorites.Any(f => f.Id == poi.Id))
+                    _favorites.Insert(0, poi);
+            }
 
-            UpdateSaveButtonUI(poi);
+            // 3. Cập nhật UI nút bấm
+            if (SelectedPoi != null && SelectedPoi.Id == poi.Id)
+                UpdateSaveButtonUI(poi);
+
+            // 4. LƯU QUAN TRỌNG: Hãy await nó hoặc đảm bảo nó chạy xong
+            // Thử bỏ Task.Run để kiểm tra xem có phải do luồng không
+            await _database.UpdateFavoriteStatusAsync(poi);
+
+            System.Diagnostics.Debug.WriteLine($"==> Đã yêu cầu lưu Id: {poi.Id} - Status: {poi.IsFavorite}");
         }
 
         private async void OnFavoriteToggleClicked(object sender, EventArgs e)
@@ -460,36 +442,47 @@ namespace MauiAppMain
         }
 
 
-        // ---------------- TABS MỚI ----------------
-
+        // ---------------- TABS ----------------
         private async void OnAllPoiTabClicked(object sender, EventArgs e)
         {
-            var allPage = new AllPoiPage(_pois);
-            // Sử dụng tên event mới đã đổi ở trên
-            allPage.PoiSelectedEvent += async (poi) =>
-            {
-                await HandlePoiSelected(poi);
-            };
-            await Navigation.PushModalAsync(allPage);
+            _currentTab = 0;
+            _sheetVisible = true;
+            UpdateTabTitle();
+
+            SinglePoiView.IsVisible = false;
+            PoiListContainer.IsVisible = true;
+
+            // Xử lý bật/tắt hiển thị danh sách NGAY LẬP TỨC để tránh dính list cũ (bug)
+            AllPoiListView.IsVisible = true;
+            FavoritePoiListView.IsVisible = false;
+
+            await PoiSheet.TranslateTo(0, _sheetFullY, 180, Easing.CubicOut);
+            
         }
 
         private async void OnFavoriteTabClicked(object sender, EventArgs e)
         {
-            var favPage = new FavoritePoiPage(_favorites);
-            favPage.PoiSelectedEvent += async (poi) =>
-            {
-                await HandlePoiSelected(poi);
-            };
-            await Navigation.PushModalAsync(favPage);
+            _currentTab = 1;
+            _sheetVisible = true;
+            UpdateTabTitle();
+
+            SinglePoiView.IsVisible = false;
+            PoiListContainer.IsVisible = true;
+
+            // Xử lý bật/tắt hiển thị danh sách NGAY LẬP TỨC
+            AllPoiListView.IsVisible = false;
+            FavoritePoiListView.IsVisible = true;
+
+            await PoiSheet.TranslateTo(0, _sheetFullY, 180, Easing.CubicOut);
         }
 
-        //void UpdateTabTitle()
-        //{
-        //    //string title = _currentTab == 0 ? "Tất cả POI" : "Yêu thích";
+        void UpdateTabTitle()
+        {
+            string title = _currentTab == 0 ? "Tất cả POI" : "Yêu thích";
 
-        //    CurrentTabLabel.Text = title;          // cập nhật tên tab trên danh sách
+            CurrentTabLabel.Text = title;          // cập nhật tên tab trên danh sách
 
-        //}
+        }
 
         // ---------------- SEARCH ----------------
         private async void OnSearchTapped(object sender, EventArgs e)
@@ -501,12 +494,14 @@ namespace MauiAppMain
             searchPage.OnPoiSelected = async (poi) =>
             {
                 // 1. Di chuyển bản đồ tới vị trí của điểm được chọn
-                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                    new Location(poi.Latitude, poi.Longitude),
-                    Distance.FromMeters(400)));
+                //MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                //    new Location(poi.Latitude, poi.Longitude),
+                //    Distance.FromMeters(400)));
 
                 // 2. Hiển thị thông tin chi tiết (Bottom Sheet) của điểm đó
-                await ShowPoiWithTransition(poi);
+                //await ShowPoiWithTransition(poi);
+
+                await FocusOnPoi(poi);
             };
 
             // Chuyển sang trang tìm kiếm
@@ -525,22 +520,22 @@ namespace MauiAppMain
             if (_sheetVisible)
                 await HideBottomSheet();
         }
-        //private async void OnPoiItemSelected(object sender, SelectionChangedEventArgs e)
-        //{
-        //    if (e.CurrentSelection.FirstOrDefault() is PointOfInterest poi)
-        //    {
-        //        // 🔥 Move map tới POI
-        //        MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-        //            new Location(poi.Latitude, poi.Longitude),
-        //            Distance.FromMeters(300)));
+        private async void OnPoiItemSelected(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.CurrentSelection.FirstOrDefault() is PointOfInterest poi)
+            {
+                // 🔥 Move map tới POI
+                //MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                //    new Location(poi.Latitude, poi.Longitude),
+                //    Distance.FromMeters(300)));
 
-        //        // 🔥 Mở detail luôn (tuỳ bạn)
-        //        await ShowPoiWithTransition(poi);
-        //    }
+                // 🔥 Mở detail luôn (tuỳ bạn)
+                await FocusOnPoi(poi);
+            }
 
-        //    // ❗ reset selection để không bị highlight
-        //    ((CollectionView)sender).SelectedItem = null;
-        //}
+            // ❗ reset selection để không bị highlight
+            ((CollectionView)sender).SelectedItem = null;
+        }
 
         private async void OnSaveClicked(object sender, EventArgs e)
         {
