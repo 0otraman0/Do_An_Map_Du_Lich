@@ -100,68 +100,100 @@ namespace MauiAppMain
             if (_isLoaded) return;
             _isLoaded = true;
 
-            // 0. BẬT BẢN ĐỒ NGAY LẬP TỨC ĐỂ ANDROID VẼ NATIVE MAP Ở BACKGROUND
-            MyMap.IsVisible = true;
-
-            // 1. KÍCH HOẠT ĐA LUỒNG: Vừa xin quyền GPS, vừa chạy chìm lấy Gói Data
-            var permissionTask = Permissions.RequestAsync<Permissions.LocationAlways>();
-            var dbTask = Task.Run(async () => await _database.GetPOIsAsync());
-
-            // 2. Chờ cả 2 nhiệm vụ hoàn tất song song (tiết kiệm 50% thời gian)
-            await Task.WhenAll(permissionTask, dbTask);
-            var list = await dbTask;
-
-            // 3. Xóa sạch dữ liệu cũ (nếu có) và nạp mới
-            _pois.Clear();
-            _favorites.Clear();
-
-            foreach (var poi in list)
+            try 
             {
-                _pois.Add(poi); 
-                if (poi.IsFavorite) _favorites.Add(poi); 
-            }
+                // 0. BẬT BẢN ĐỒ NGAY LẬP TỨC
+                //if (MyMap != null) MyMap.IsVisible = false;
 
-            // 4. Bơm dữ liệu POI lên Map
-            if (_pois.Count > 0)
-            {
-                LoadPoisOnMap();
-                var firstPoi = _pois[0];
-                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                    new Location(firstPoi.Latitude, firstPoi.Longitude),
-                    Distance.FromMeters(500)));
-            }
+                // 1. KÍCH HOẠT ĐA LUỒNG: Vừa xin quyền GPS, vừa chạy chìm lấy Gói Data
+                // Note: Android 15 is strict about LocationAlways. Requesting WhenInUse first is safer.
+                // 1. Xin quyền GPS trước
+                var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 
-            // --- HACK WARM UP NATIVE VIEWS ---
-            // Ép MAUI phải biên dịch và bóc tách giao diện (Native UI) của List ngay lúc này 
-            // Do BottomSheet hiện tại đang nằm ngoài màn hình (TranslationY) nên user sẽ không thấy nó overlap
-            PoiListContainer.IsVisible = true;
-            AllPoiListView.IsVisible = true;
-            FavoritePoiListView.IsVisible = true; // Bật luôn tab Favorites để load sẵn bộ nhớ
+                // 2. Load DB
+                //var list = await Task.Run(async () => await _database.GetPOIsAsync());
 
-            // Rút ngắn trễ luồng xuống còn 100ms (Đủ để render MeasureFirstItem)
-            await Task.Delay(100);
+                // 3. Xử lý UI và Bật bản đồ SAU KHI ĐÃ CÓ QUYỀN
+                if (status == PermissionStatus.Granted)
+                {
+                    MyMap.IsShowingUser = true; // Giờ mới cho phép Map đọc GPS
+                }
 
-            // Sau khi dựng xong form thì đem giấu đi toàn bộ
-            PoiListContainer.IsVisible = false;
-            AllPoiListView.IsVisible = false;
-            FavoritePoiListView.IsVisible = false;
-            // -----------------------------------
+                MyMap.IsVisible = true; // Giờ bật Map lên mới an toàn
+                var permissionTask = Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 
-            // BÂY GIỜ MỚI MỞ KHÓA TƯƠNG TÁC CHUẨN XÁC
-            TopOverlay.IsEnabled = true;
-            MainTabBar.IsEnabled = true;
+                var dbTask = Task.Run(async () => await _database.GetPOIsAsync());
 
-            // VÀ KẾT THÚC VAI TRÒ CỦA ÁP PHÍCH LÀM MỜ
-            await LoadingOverlay.FadeTo(0, 50, Easing.Linear);
-            LoadingOverlay.IsVisible = false;
+                // 2. Chờ cả 2 nhiệm vụ hoàn tất song song
+                await Task.WhenAll(permissionTask, dbTask);
+                var list = await dbTask;
+
+                // 3. Xóa sạch dữ liệu cũ và nạp mới
+                _pois.Clear();
+                _favorites.Clear();
+
+                if (list != null)
+                {
+                    foreach (var poi in list)
+                    {
+                        _pois.Add(poi); 
+                        if (poi.IsFavorite) _favorites.Add(poi); 
+                    }
+                }
+
+                // 4. Bơm dữ liệu POI lên Map
+                if (_pois.Count > 0 && MyMap != null)
+                {
+                    LoadPoisOnMap();
+                    var firstPoi = _pois[0];
+                    MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                        new Location(firstPoi.Latitude, firstPoi.Longitude),
+                        Distance.FromMeters(500)));
+                }
+
+                // --- HACK WARM UP NATIVE VIEWS ---
+                if (PoiListContainer != null) PoiListContainer.IsVisible = true;
+                if (AllPoiListView != null) AllPoiListView.IsVisible = true;
+                if (FavoritePoiListView != null) FavoritePoiListView.IsVisible = true;
+
+                await Task.Delay(100);
+
+                if (PoiListContainer != null) PoiListContainer.IsVisible = false;
+                if (AllPoiListView != null) AllPoiListView.IsVisible = false;
+                if (FavoritePoiListView != null) FavoritePoiListView.IsVisible = false;
+
+                // BÂY GIỜ MỚI MỞ KHÓA TƯƠNG TÁC
+                if (TopOverlay != null) TopOverlay.IsEnabled = true;
+                if (MainTabBar != null) MainTabBar.IsEnabled = true;
+
+                // VÀ KẾT THÚC VAI TRÒ CỦA ÁP PHÍCH LÀM MỜ
+                if (LoadingOverlay != null)
+                {
+                    await LoadingOverlay.FadeTo(0, 250, Easing.Linear);
+                    LoadingOverlay.IsVisible = false;
+                }
+
 #if ANDROID
-            // Khởi chạy service ngầm (Chỉ 1 lần)
-            if (!LocationForegroundService.IsRunning)
-            {
-                var intent = new Android.Content.Intent(Android.App.Application.Context, typeof(LocationForegroundService));
-                Android.App.Application.Context.StartForegroundService(intent);
-            }
+                // Khởi chạy service ngầm (Chỉ 1 lần)
+                // Note: Delay to ensure app is fully in foreground for Android 15
+                if (!LocationForegroundService.IsRunning)
+                {
+                    Task.Run(async () => {
+                        await Task.Delay(2000);
+                        var intent = new Android.Content.Intent(Android.App.Application.Context, typeof(LocationForegroundService));
+                        Android.App.Application.Context.StartForegroundService(intent);
+                    });
+                }
 #endif
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CRITICAL STARTUP ERROR: " + ex.ToString());
+                // Ensure UI is usable even if background tasks fail
+                if (LoadingOverlay != null) LoadingOverlay.IsVisible = false;
+                if (TopOverlay != null) TopOverlay.IsEnabled = true;
+                if (MainTabBar != null) MainTabBar.IsEnabled = true;
+            }
         }
 
         protected override void OnSizeAllocated(double width, double height)

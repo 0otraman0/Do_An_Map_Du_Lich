@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
 	<queries>
@@ -13,9 +13,14 @@
 		android:label="MauiAppMain" 
 		android:supportsRtl="true">
 		
-	<meta-data 
-		android:name="com.google.android.geo.API_KEY" 
-		android:value="AIzaSyBsopFrCDx_S35AiJKVhWaxFNtTId0iwx8" />
+		<meta-data 
+			android:name="com.google.android.geo.API_KEY" 
+			android:value="AIzaSyBsopFrCDx_S35AiJKVhWaxFNtTId0iwx8" />
+			
+		<service 
+			android:name=".LocationForegroundService" 
+			android:foregroundServiceType="location" 
+			android:exported="false" />
 	</application>
 	
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

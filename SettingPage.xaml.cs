@@ -57,7 +57,19 @@ public partial class SettingPage : ContentPage
 
         // 2. Fetch data FIRST if the language data is not available
         if (!await database.IsLanguageDataAvailable(lang.Code))
-            await dataFetch.FetchData(true);
+        {
+            LoadingOverlay.IsVisible = true;
+            try
+            {
+                await dataFetch.FetchData(true);
+                // Allow DB writes to settle before UI refresh
+                await Task.Delay(500);
+            }
+            finally
+            {
+                LoadingOverlay.IsVisible = false;
+            }
+        }
 
         // 3. NOW apply language + reload UI
         LanguageService.SetLanguage(lang.Code);

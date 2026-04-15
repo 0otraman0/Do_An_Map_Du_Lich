@@ -1,4 +1,4 @@
-﻿using SQLite;
+using SQLite;
 using System.Reflection.Metadata;
 using System.Text.Json.Serialization;
 
@@ -7,8 +7,6 @@ namespace MauiAppMain.Models
     public class PoiDescription
     {
         [PrimaryKey]
-
-        [JsonPropertyName("Id")]
         public string Id { get; set; } = string.Empty;
         
         [JsonPropertyName("Name")]

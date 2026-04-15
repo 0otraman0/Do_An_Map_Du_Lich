@@ -1,4 +1,4 @@
-﻿using FFImageLoading.Maui;
+using FFImageLoading.Maui;
 using MauiAppMain.Resources.Localization;
 using MauiAppMain.Services;
 using Microsoft.Extensions.Logging;
@@ -14,7 +14,6 @@ namespace MauiAppMain
             builder
                 .UseMauiApp<App>()
                 .UseMauiMaps()
-                .UseFFImageLoading()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -29,16 +28,19 @@ namespace MauiAppMain
 #if ANDROID
             MapHandler.Mapper.AppendToMapping("DisableMyLocationButton", (handler, view) =>
             {
+                if (handler?.PlatformView == null) return;
 
                 handler.PlatformView.GetMapAsync(new MapReadyCallback(map =>
                 {
-                    map.UiSettings.MyLocationButtonEnabled = false;
+                    if (map?.UiSettings != null)
+                        map.UiSettings.MyLocationButtonEnabled = false;
                 }));
             });
 #endif
             builder.Services.AddSingleton<DatabaseService>();
             builder.Services.AddSingleton<DataFetch>();
             builder.Services.AddSingleton<HttpClient>();
+            builder.Services.AddSingleton<HeartbeatService>();
 #if ANDROID
 
             builder.Services.AddSingleton<IDeviceInfoService, DeviceInfoService>();

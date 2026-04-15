@@ -7,22 +7,64 @@ namespace MauiAppMain.Services
     public class DatabaseService
     {
         private SQLiteAsyncConnection? _database;
+        private readonly SemaphoreSlim _initSemaphore = new SemaphoreSlim(1, 1);
 
         public async Task Init()
         {
+            if (_database != null) return;
 
-            if (_database != null)
+            await _initSemaphore.WaitAsync();
+            try
             {
-                return;
-            }
-            string dbPath = Path.Combine(FileSystem.AppDataDirectory, "poi.db");
-            _database = new SQLiteAsyncConnection(dbPath);
+                if (_database != null) return;
 
-            await _database.CreateTableAsync<Poi>();
-            await _database.CreateTableAsync<POIImage>();
-            await _database.CreateTableAsync<Language_option>();
-            await _database.CreateTableAsync<PoiDescription>();
+                string dbPath = Path.Combine(FileSystem.AppDataDirectory, "poi.db");
+                
+                try 
+                {
+                    _database = new SQLiteAsyncConnection(dbPath);
+                    await _database.CreateTableAsync<Poi>();
+                    await _database.CreateTableAsync<POIImage>();
+                    await _database.CreateTableAsync<Language_option>();
+                    await _database.CreateTableAsync<PoiDescription>();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"DATABASE INIT ERROR: {ex.Message}. Attempting recovery...");
+                    
+                    // SCHEMA MISMATCH RECOVERY: If migration fails, close and delete the corrupt/old DB
+                    if (_database != null)
+                    {
+                        await _database.CloseAsync();
+                        _database = null;
+                    }
+
+                    if (File.Exists(dbPath))
+                    {
+                        File.Delete(dbPath);
+                        Console.WriteLine("Old database deleted. Re-initializing...");
+                    }
+
+                    // Retry initialization once with a clean file
+                    _database = new SQLiteAsyncConnection(dbPath);
+                    await _database.CreateTableAsync<Poi>();
+                    await _database.CreateTableAsync<POIImage>();
+                    await _database.CreateTableAsync<Language_option>();
+                    await _database.CreateTableAsync<PoiDescription>();
+                }
+            }
+            finally
+            {
+                _initSemaphore.Release();
+            }
         }
+        public async Task<bool> HasAnyPoisAsync()
+        {
+            await Init();
+            var count = await _database!.Table<Poi>().CountAsync();
+            return count > 0;
+        }
+
         public async Task<List<Poi>> GetAllPoisAsync()
         {
             await Init();
@@ -173,13 +215,16 @@ namespace MauiAppMain.Services
                 await _database.DeleteAsync(poi);
             }
         }
-        public async Task SaveDescriptionsAsync(List<PoiDescription> descriptions)
+        public async Task SaveDescriptionsAsync(List<PoiDescription> descriptions)  
         {
             await Init();
 
             Console.WriteLine("Saving descriptions: " + descriptions.Count);
             foreach (var desc in descriptions)
             {
+                // Generate a unique local ID to avoid PK conflicts across languages
+                desc.Id = $"{desc.PoiId}_{desc.Language}";
+                
                 Console.WriteLine("Saving descriptions: " + desc.Address + desc.Language + desc.Detail);
                 var existing = await _database!.Table<PoiDescription>()
                 .Where(d => d.PoiId == desc.PoiId && d.Language == desc.Language)

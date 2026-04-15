@@ -4,7 +4,9 @@
              xmlns:resources="clr-namespace:MauiAppMain.Resources.Localization"
              NavigationPage.HasBackButton="True">
 
-    <VerticalStackLayout Padding="30">
+    <Grid>
+        <VerticalStackLayout Padding="30">
+
 
         <Label
             Text="{x:Static resources:AppResource.Setting}" 
@@ -123,4 +125,12 @@
         
     </VerticalStackLayout>
 
+    <!-- Loading Overlay -->
+    <Grid x:Name="LoadingOverlay" BackgroundColor="#80000000" IsVisible="False">
+        <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="20">
+            <ActivityIndicator IsRunning="True" Color="White" WidthRequest="50" HeightRequest="50" />
+            <Label Text="Updating Data..." FontSize="18" HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </Grid>
+</Grid>
 </ContentPage>

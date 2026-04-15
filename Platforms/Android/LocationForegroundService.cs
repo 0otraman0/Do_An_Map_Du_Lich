@@ -14,6 +14,9 @@ public class LocationForegroundService : Service
     private readonly DatabaseService database = new DatabaseService();
     private List<PointOfInterest> _pois = new();
     private Dictionary<int, DateTime> _poiLastSpoken = new();
+    private DateTime _lastHeartbeatTime = DateTime.MinValue;
+    private readonly HttpClient _httpClient = new HttpClient();
+    private const string HeartbeatUrl = "https://hy63tevx5bcvvy5e5mdvcuqhyy0mwxzy.lambda-url.ap-southeast-1.on.aws/";
 
     CancellationTokenSource _cts;
 
@@ -25,7 +28,14 @@ public class LocationForegroundService : Service
             return StartCommandResult.NotSticky;
         IsRunning = true;
 
-        StartForeground(1, CreateNotification());
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.S)
+        {
+            StartForeground(1, CreateNotification(), Android.Content.PM.ForegroundService.TypeLocation);
+        }
+        else
+        {
+            StartForeground(1, CreateNotification());
+        }
 
         _cts = new CancellationTokenSource();
         _ = InitAndStartTracking(_cts.Token);
@@ -43,7 +53,7 @@ public class LocationForegroundService : Service
             var channel = new NotificationChannel(
                 channelId,
                 "Background Tracking",
-                NotificationImportance.Default);
+                NotificationImportance.High); // Increased importance for foreground visibility
 
             var manager = (NotificationManager)GetSystemService(NotificationService);
             manager.CreateNotificationChannel(channel);
@@ -77,6 +87,13 @@ public class LocationForegroundService : Service
 
                 if (location != null)
                 {
+                    // Send periodic heartbeat (every 10 seconds)
+                    if ((DateTime.Now - _lastHeartbeatTime).TotalSeconds >= 10)
+                    {
+                        _ = SendHeartbeatAsync(location);
+                        _lastHeartbeatTime = DateTime.Now;
+                    }
+
                     foreach (var poi in _pois)
                     {
                         double distance = location.CalculateDistance(
@@ -157,5 +174,48 @@ public class LocationForegroundService : Service
         Console.WriteLine("DEBUG: Service is stopping due to task removal.");
         StopSelf();
         base.OnTaskRemoved(rootIntent);
+    }
+
+    private async Task SendHeartbeatAsync(Location location)
+    {
+        try
+        {
+            var deviceId = Preferences.Get("DeviceHeartbeatId", string.Empty);
+            if (string.IsNullOrEmpty(deviceId))
+            {
+                deviceId = Guid.NewGuid().ToString();
+                Preferences.Set("DeviceHeartbeatId", deviceId);
+            }
+
+            var payload = new
+            {
+                deviceId = deviceId,
+                timestamp = DateTime.UtcNow.ToString("o"),
+                status = "active",
+                platform = DeviceInfo.Current.Platform.ToString(),
+                model = DeviceInfo.Current.Model,
+                name = DeviceInfo.Current.Name,
+                latitude = location.Latitude,
+                longitude = location.Longitude
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            
+            System.Diagnostics.Debug.WriteLine($"[Background Heartbeat] Sending POST to: {HeartbeatUrl}");
+
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await _httpClient.PostAsync(HeartbeatUrl, content, timeoutCts.Token);
+            
+            System.Diagnostics.Debug.WriteLine("[Background Heartbeat] Sent successfully");
+        }
+        catch (Android.OS.OperationCanceledException)
+        {
+            System.Diagnostics.Debug.WriteLine("[Background Heartbeat] Error: Request timed out");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Background Heartbeat] Error: {ex.Message}");
+        }
     }
 }
