@@ -81,6 +81,7 @@ namespace MauiAppMain
 
         bool _isLoaded = false;
 
+
         private void FilterDisplayedPois()
         {
             // Xác định danh sách nguồn dựa trên Tab hiện tại
