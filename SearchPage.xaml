@@ -2,39 +2,52 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MauiAppMain.SearchPage"
-             Title="SearchPage">
-    <VerticalStackLayout Padding="10">
+             Title="Tìm kiếm địa điểm"
+             BackgroundColor="White">
 
-        <Entry
-            x:Name="searchEntry"
-            Placeholder="Search place"
-            TextChanged="OnSearchTextChanged"/>
+    <Grid RowDefinitions="Auto, *" Padding="10" RowSpacing="10">
+
+        <Frame Grid.Row="0" Padding="10,2" CornerRadius="8" HasShadow="False" BorderColor="LightGray">
+            <Entry
+                x:Name="searchEntry"
+                Placeholder="Nhập tên địa điểm cần tìm..."
+                TextChanged="OnSearchTextChanged"
+                ClearButtonVisibility="WhileEditing"
+                FontSize="16"/>
+        </Frame>
 
         <CollectionView
-    x:Name="resultList"
-    SelectionMode="Single"
-    SelectionChanged="OnResultSelected">
+            Grid.Row="1"
+            x:Name="resultList"
+            SelectionMode="Single"
+            SelectionChanged="OnResultSelected"
+            EmptyView="Không tìm thấy địa điểm nào">
+
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Grid Padding="10" RowDefinitions="Auto, Auto">
                         <Label Grid.Row="0" 
-                       Text="{Binding Name}" 
-                       FontSize="18" 
-                       FontAttributes="Bold" 
-                       TextColor="Black"/>
+                               Text="{Binding Name}" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="Black"/>
 
                         <Label Grid.Row="1" 
-                       Text="{Binding Description}" 
-                       FontSize="14" 
-                       TextColor="Gray"
-                       MaxLines="1"
-                       LineBreakMode="TailTruncation"/>
+                               Text="{Binding Description}" 
+                               FontSize="14" 
+                               TextColor="Gray"
+                               MaxLines="1"
+                               LineBreakMode="TailTruncation"/>
+
+                        <BoxView Grid.Row="1" 
+                                 HeightRequest="1" 
+                                 BackgroundColor="LightGray" 
+                                 VerticalOptions="End" 
+                                 Margin="0,5,0,0"/>
                     </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
-
         </CollectionView>
 
-    </VerticalStackLayout>
-
+    </Grid>
 </ContentPage>

@@ -20,19 +20,19 @@
               BackgroundColor="#44000000"
               InputTransparent="False"
               IsVisible="True">
-              
+
             <Frame BackgroundColor="White"
                    CornerRadius="15"
                    HasShadow="True"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"
                    Padding="25,20">
-                   
+
                 <VerticalStackLayout Spacing="15" HorizontalOptions="Center">
                     <ActivityIndicator IsRunning="True" Color="#00AEEF" WidthRequest="45" HeightRequest="45" HorizontalOptions="Center"/>
                     <Label Text="Đang tải..." FontSize="14" TextColor="#555555" FontAttributes="Bold" HorizontalOptions="Center" />
                 </VerticalStackLayout>
-                
+
             </Frame>
         </Grid>
 

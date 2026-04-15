@@ -87,7 +87,7 @@ namespace MauiAppMain.Services
             var translations = await _database.Table<PoiDescription>()
                 .Where(t => t.Language == lang)
                 .ToListAsync();
-                
+
             // LOAD TOÀN BỘ ẢNH LÊN RAM ĐỂ TRÁNH LỖI N+1 SQL QUERIES (Nguyên nhân chậm 5-6s)
             var allImages = await _database.Table<POIImage>().ToListAsync();
 
@@ -106,7 +106,7 @@ namespace MauiAppMain.Services
 
 
                 var imageJson = JsonSerializer.Serialize(imagePaths);
-      
+
                 result.Add(new PointOfInterest
                 {
                     Id = p.Id,
@@ -287,19 +287,19 @@ namespace MauiAppMain.Services
         {
             await Init();
 
-                var existing = await _database!.Table<Language_option>()
-                                             .Where(p => p.Code == language.Code)
-                                             .FirstOrDefaultAsync();
-                if (existing != null)
-                {
-                    // UPDATE
-                    await _database.UpdateAsync(language);
-                }
-                else
-                {
-                    // INSERT
-                    await _database.InsertAsync(language);
-                }
+            var existing = await _database!.Table<Language_option>()
+                                         .Where(p => p.Code == language.Code)
+                                         .FirstOrDefaultAsync();
+            if (existing != null)
+            {
+                // UPDATE
+                await _database.UpdateAsync(language);
+            }
+            else
+            {
+                // INSERT
+                await _database.InsertAsync(language);
+            }
         }
         // Ham lấy tất cả ngôn ngữ
         public async Task<List<Language_option>> GetLanguagesAsync()
@@ -307,17 +307,51 @@ namespace MauiAppMain.Services
             await Init();
             return await _database!.Table<Language_option>().ToListAsync();
         }
+
         public async Task<List<PointOfInterest>> SearchPoiAsync(string keyword)
         {
             await Init();
+            if (string.IsNullOrWhiteSpace(keyword)) return new List<PointOfInterest>();
 
             keyword = keyword.ToLower();
+            var lang = Preferences.Get("App_language", "en");
 
-            return await _database!.Table<PointOfInterest>()
-                .Where(p => p.Name.ToLower().Contains(keyword) || p.Description.ToLower().Contains(keyword))
-                // limit suggestions use .take(5) if you want to limit the number of suggestions
+            // CHỈ TÌM KIẾM TRONG CỘT NAME
+            var matchedDescriptions = await _database!.Table<PoiDescription>()
+                .Where(t => t.Language == lang && t.Name.ToLower().Contains(keyword)) // Đã bỏ phần Description
                 .ToListAsync();
+
+            if (!matchedDescriptions.Any()) return new List<PointOfInterest>();
+
+            var poiIds = matchedDescriptions.Select(d => d.PoiId).ToList();
+
+            var pois = await _database.Table<Poi>()
+                .Where(p => poiIds.Contains(p.Id))
+                .ToListAsync();
+
+            var result = new List<PointOfInterest>();
+            foreach (var desc in matchedDescriptions)
+            {
+                var p = pois.FirstOrDefault(x => x.Id == desc.PoiId);
+                if (p != null)
+                {
+                    result.Add(new PointOfInterest
+                    {
+                        Id = p.Id,
+                        Latitude = p.Latitude,
+                        Longitude = p.Longitude,
+                        Name = desc.Name,
+                        Description = desc.Description, // Vẫn giữ hiển thị mô tả ra UI nếu bạn muốn
+                        IsFavorite = p.IsFavorite,
+                        Address = desc.Address,
+                        priorityLevel = p.priorityLevel
+                    });
+                }
+            }
+
+            return result.OrderByDescending(p => p.priorityLevel).ToList();
         }
+
         public async Task UpdateLanguageAsync(Language_option language)
         {
             await Init();
@@ -359,7 +393,7 @@ namespace MauiAppMain.Services
         {
             await Init();
             return await _database!.Table<POIImage>().ToListAsync();
-            
+
         }
 
         public async Task DeleteImagesByPoiIdAsync(int poiId)

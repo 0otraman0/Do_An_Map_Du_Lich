@@ -42,6 +42,7 @@ namespace MauiAppMain
         private bool _isPlaying = false;
         private int _audioSessionId = 0;
         private int _currentTab = 0;
+        private Pin _lastHighlightedPin; // Lưu lại để xóa nhãn điểm cũ
 
         // BOTTOM SHEET
         private double _sheetFullY = 10;
@@ -79,6 +80,7 @@ namespace MauiAppMain
         }
 
         bool _isLoaded = false;
+
 
         private void FilterDisplayedPois()
         {
@@ -232,25 +234,65 @@ namespace MauiAppMain
             e.HideInfoWindow = true;
 
             if (sender is Pin pin && _pinPoiMap.TryGetValue(pin, out var poi))
-                await ShowPoiWithTransition(poi);
+                await FocusOnPoi(poi);
         }
 
-        // ---------------- BOTTOM SHEET ----------------
-        async Task ShowPoiWithTransition(PointOfInterest poi)
+
+        private async Task FocusOnPoi(PointOfInterest poi)
         {
+            if (poi == null) return;
+
+            // 1. Reset nhãn của Pin cũ (Dùng MainThread để an toàn tuyệt đối)
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_lastHighlightedPin != null)
+                {
+                    _lastHighlightedPin.Label = string.Empty;
+                }
+
+                // Tìm Pin mới dựa trên tọa độ
+                var targetPin = MyMap.Pins.FirstOrDefault(p =>
+                    Math.Abs(p.Location.Latitude - poi.Latitude) < 0.0001 &&
+                    Math.Abs(p.Location.Longitude - poi.Longitude) < 0.0001);
+
+                if (targetPin != null)
+                {
+                    targetPin.Label = poi.Name;
+                    _lastHighlightedPin = targetPin;
+                }
+            });
+
+            // 2. Di chuyển Camera (Chỉ thực hiện 1 lần ở đây)
+            double latitudeOffset = 0.002;
+            var cameraLocation = new Location(poi.Latitude - latitudeOffset, poi.Longitude);
+            MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(cameraLocation, Distance.FromMeters(300)));
+
+            // 3. Hiển thị Bottom Sheet (Gọi hàm Transition nhưng ĐÃ BỎ MoveToRegion bên trong đó)
+            await ShowPoiWithTransition(poi);
+        }
+
+
+        // ---------------- BOTTOM SHEET ----------------
+        private async Task ShowPoiWithTransition(PointOfInterest poi)
+        {
+            if (poi == null) return;
             SelectedPoi = poi;
 
+            // Cập nhật trạng thái hiển thị
             if (!_sheetVisible)
             {
-                PoiSheet.TranslationY = _sheetHalfY;
+                PoiSheet.TranslationY = _sheetHiddenY;
                 _sheetVisible = true;
             }
+
             UpdateTabTitle();
+            UpdateSaveButtonUI(poi); // Cập nhật luôn icon trái tim
 
             SinglePoiView.IsVisible = true;
             PoiListContainer.IsVisible = false;
 
-            await PoiSheet.TranslateTo(0, _sheetHalfY, 200);
+            // Hiệu ứng trượt lên
+            await PoiSheet.TranslateTo(0, _sheetHalfY, 250, Easing.CubicOut);
         }
 
         async Task HideBottomSheet()
@@ -448,6 +490,7 @@ namespace MauiAppMain
             FavoritePoiListView.IsVisible = false;
 
             await PoiSheet.TranslateTo(0, _sheetFullY, 180, Easing.CubicOut);
+            
         }
 
         private async void OnFavoriteTabClicked(object sender, EventArgs e)
@@ -484,24 +527,18 @@ namespace MauiAppMain
             searchPage.OnPoiSelected = async (poi) =>
             {
                 // 1. Di chuyển bản đồ tới vị trí của điểm được chọn
-                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                    new Location(poi.Latitude, poi.Longitude),
-                    Distance.FromMeters(400)));
+                //MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                //    new Location(poi.Latitude, poi.Longitude),
+                //    Distance.FromMeters(400)));
 
                 // 2. Hiển thị thông tin chi tiết (Bottom Sheet) của điểm đó
-                await ShowPoiWithTransition(poi);
+                //await ShowPoiWithTransition(poi);
+
+                await FocusOnPoi(poi);
             };
 
             // Chuyển sang trang tìm kiếm
             await Navigation.PushAsync(searchPage);
-        }
-
-
-
-        // ---------------- SEED ----------------
-        async Task SeedData()
-        {
-
         }
 
         // ---------------- MENU ----------------
@@ -521,12 +558,12 @@ namespace MauiAppMain
             if (e.CurrentSelection.FirstOrDefault() is PointOfInterest poi)
             {
                 // 🔥 Move map tới POI
-                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
-                    new Location(poi.Latitude, poi.Longitude),
-                    Distance.FromMeters(300)));
+                //MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
+                //    new Location(poi.Latitude, poi.Longitude),
+                //    Distance.FromMeters(300)));
 
                 // 🔥 Mở detail luôn (tuỳ bạn)
-                await ShowPoiWithTransition(poi);
+                await FocusOnPoi(poi);
             }
 
             // ❗ reset selection để không bị highlight

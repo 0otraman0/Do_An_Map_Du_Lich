@@ -1,0 +1,48 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiAppMain.FavoritePoiPage"
+             Title="Yêu thích"
+             BackgroundColor="White">
+    <Grid RowDefinitions="Auto,*">
+        <HorizontalStackLayout Padding="20,20,20,10" Spacing="10">
+            <Image Source="heart_icon.png" WidthRequest="24" VerticalOptions="Center"/>
+            <Label Text="Địa điểm yêu thích"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="#E91E63"
+                   VerticalOptions="Center"/>
+        </HorizontalStackLayout>
+
+        <CollectionView x:Name="FavListView"
+                        Grid.Row="1"
+                        SelectionMode="Single"
+                        SelectionChanged="OnPoiSelected">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="15" ColumnDefinitions="100,*" HeightRequest="100">
+                        <Border StrokeShape="RoundRectangle 8"
+                                HeightRequest="80"
+                                WidthRequest="80">
+                            <Image Aspect="AspectFill"
+                                   Source="{Binding ImageList[0]}"/>
+                        </Border>
+
+                        <VerticalStackLayout Grid.Column="1"
+                                             Margin="15,0,0,0"
+                                             Spacing="2"
+                                             VerticalOptions="Center">
+                            <Label Text="{Binding Name}"
+                                   FontAttributes="Bold"
+                                   FontSize="16"
+                                   TextColor="Black"/>
+                            <Label Text="{Binding Description}"
+                                   MaxLines="2"
+                                   FontSize="13"
+                                   TextColor="Gray"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

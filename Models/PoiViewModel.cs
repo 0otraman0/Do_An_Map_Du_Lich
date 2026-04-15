@@ -21,6 +21,9 @@ namespace MauiAppMain.Models
 
         // Trường IsFavorite được viết lại để phát tín hiệu cho UI
         private bool _isFavorite = false;
+        private List<string> _imageList;
+
+        [Ignore]
         public bool IsFavorite
         {
             get => _isFavorite;
@@ -29,21 +32,34 @@ namespace MauiAppMain.Models
                 if (_isFavorite != value)
                 {
                     _isFavorite = value;
-                    OnPropertyChanged(); // Thông báo cho UI cập nhật trái tim
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(FavoriteIcon)); // Thông báo icon thay đổi
+                    OnPropertyChanged(nameof(FavoriteColor)); // Thông báo màu thay đổi
                 }
             }
         }
 
-        [Ignore]
-        public List<string> ImageList => string.IsNullOrEmpty(ImageUrlsJson)
-            ? new List<string>()
-            : JsonSerializer.Deserialize<List<string>>(ImageUrlsJson) ?? new List<string>();
-
+        public List<string> ImageList
+        {
+            get
+            {
+                if (_imageList == null)
+                {
+                    _imageList = string.IsNullOrEmpty(ImageUrlsJson)
+                        ? new List<string>()
+                        : JsonSerializer.Deserialize<List<string>>(ImageUrlsJson) ?? new List<string>();
+                }
+                return _imageList;
+            }
+        }
         // Phần xử lý sự kiện thông báo thay đổi
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public string FavoriteIcon => IsFavorite ? "❤️" : "🤍";
+        public Color FavoriteColor => IsFavorite ? Colors.DeepSkyBlue : Colors.Gray;
     }
 }

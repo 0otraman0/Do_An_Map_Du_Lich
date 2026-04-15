@@ -43,7 +43,7 @@ public class LocationForegroundService : Service
 
         return StartCommandResult.Sticky;
     }
-    
+
     Notification CreateNotification()
     {
         string channelId = "location_service";
@@ -74,7 +74,7 @@ public class LocationForegroundService : Service
     async Task StartTracking(CancellationToken token)
     {
         // QUAN TRỌNG: Phải có chữ await để luồng được nhường quyền (Bảo vệ App khỏi treo ANR)
-        await Task.Delay(5000); 
+        await Task.Delay(5000);
         try
         {
             while (!token.IsCancellationRequested)
@@ -152,7 +152,7 @@ public class LocationForegroundService : Service
         await MainThread.InvokeOnMainThreadAsync(async () =>
         {
             try
-            {   
+            {
                 AndroidTtsService.Speak(poi.Description);
             }
             catch (Exception ex)

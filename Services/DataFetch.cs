@@ -26,11 +26,11 @@ public class DataFetch
             return;
         }
         Console.WriteLine("API request suscess");
-        if(IsLowStorage())
+        if (IsLowStorage())
         {
             Console.WriteLine("Device is low on storage, requesting data with language filter");
         }
-         else
+        else
         {
             Console.WriteLine("Device has sufficient storage, requesting all data");
         }
@@ -77,7 +77,7 @@ public class DataFetch
             }
         }
         // 2. SAVE LANGUAGE OPTIONS
-        if (result.Languages !=null)
+        if (result.Languages != null)
         {
             foreach (var lang in result.Languages)
             {
@@ -97,7 +97,7 @@ public class DataFetch
         var pois = await _database.GetAllPoisAsync();
         foreach (var item in pois)
         {
-            Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id );
+            Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id);
         }
         //  3. SAVE DESCRIPTIONS
         if (result.Descriptions != null)
