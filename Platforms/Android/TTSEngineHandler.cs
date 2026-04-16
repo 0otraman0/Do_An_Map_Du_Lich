@@ -26,42 +26,45 @@ namespace MauiAppMain
 
         public static void Speak(string text, bool flushQueue = false)
         {
-            var voices = tts.Voices;
-            var lang = Preferences.Get("App_language", "vi");
-            Locale locale;
+            // 1. Kiểm tra null ngay lập tức khi vào hàm
+            if (tts == null) return;
 
-            switch (lang)
+            if (string.IsNullOrEmpty(text)) return;
+
+
+
+            // 2. Chặn lỗi khi tts chưa sẵn sàng lấy Voices
+            try
             {
-                case "vi":
-                    locale = new Locale("vi", "VN");
-                    break;
+                // Thiết lập ngôn ngữ
+                var lang = Preferences.Get("App_language", "vi");
+                Locale locale = lang switch
+                {
+                    "vi" => new Locale("vi", "VN"),
+                    "ja" => new Locale("ja", "JP"),
+                    _ => Locale.Us
+                };
 
-                case "ja":
-                    locale = new Locale("ja", "JP");
-                    break;
+                tts.SetLanguage(locale);
 
-                case "en":
-                default:
-                    locale = Locale.Us;
-                    break;
+                if (queueCount >= MAX_QUEUE && !flushQueue)
+                    return;
+
+                if (flushQueue) queueCount = 0; // Nếu flush thì reset count
+
+                tts.SetPitch(1.0f);
+                tts.SetSpeechRate(0.8f);
+
+                queueCount++;
+
+                // Sử dụng ID duy nhất để Listener nhận diện được
+                string utteranceId = Guid.NewGuid().ToString();
+                tts.Speak(text, flushQueue ? QueueMode.Flush : QueueMode.Add, null, utteranceId);
             }
-            var result = tts.SetLanguage(locale);
-
-            
-
-            if (tts == null)
-                return;
-
-            if (queueCount >= MAX_QUEUE)
-                return;
-
-            tts.SetPitch(1.0f);
-            tts.SetSpeechRate(0.8f);
-
-            queueCount++;
-
-            tts.Speak(text, flushQueue ? QueueMode.Flush : QueueMode.Add, null, Guid.NewGuid().ToString());
-            //tts.Speak(text, QueueMode.Add, null, "poiSpeech");
+            catch (Exception ex)
+            {
+                Android.Util.Log.Error("TTS_ERROR", ex.Message);
+            }
         }
 
         public static void Stop()
@@ -69,8 +72,8 @@ namespace MauiAppMain
             if (tts != null)
             {
                 tts.Stop();        // Dừng ngay lập tức
-                tts.Shutdown();    // Giải phóng tài nguyên và xóa queue
-                tts = null;        // Reset đối tượng
+                //tts.Shutdown();    // Giải phóng tài nguyên và xóa queue
+                //tts = null;        // Reset đối tượng
             }
             queueCount = 0;
         }
@@ -87,12 +90,20 @@ namespace MauiAppMain
             public override void OnDone(string utteranceId)
             {
                 queueCount--;
-                OnSpeechCompleted?.Invoke();
+                // Quan trọng: Phải chạy trên MainThread vì nó sẽ tác động đến giao diện
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    OnSpeechCompleted?.Invoke();
+                });
             }
 
             public override void OnError(string utteranceId)
             {
                 queueCount--;
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    OnSpeechCompleted?.Invoke();
+                });
             }
 
             public override void OnStart(string utteranceId) { }

@@ -158,9 +158,10 @@
                 <VerticalStackLayout x:Name="SinglePoiView" Spacing="5">
 
                     <Label x:Name="SingleTabTitleLabel" 
-           FontAttributes="Bold" 
-           IsVisible="{Binding Source={RelativeSource Self}, Path=Text, Converter={StaticResource StringToBoolConverter}}"/>
-
+       FontAttributes="Bold" 
+       TextColor="Gray"
+       FontSize="12" />
+                    
                     <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center" Margin="0,5">
                         <Label Text="{Binding SelectedPoi.Name}" 
                FontSize="22" 

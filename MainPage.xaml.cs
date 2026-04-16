@@ -77,6 +77,13 @@ namespace MauiAppMain
             FavoritePoiListView.ItemsSource = _favorites;
 
             LanguageService.LoadSavedLanguage();
+
+#if ANDROID
+            AndroidTtsService.OnSpeechCompleted = () =>
+            {
+                StopAudio();
+            };
+#endif
         }
 
         bool _isLoaded = false;
@@ -359,14 +366,16 @@ namespace MauiAppMain
         // ---------------- AUDIO ----------------
         private Task PlayAudio()
         {
-            if (SelectedPoi == null) return Task.CompletedTask;
+            // Kiểm tra SelectedPoi VÀ Description có null không
+            if (SelectedPoi == null || string.IsNullOrEmpty(SelectedPoi.Description))
+            {
+                return Task.CompletedTask;
+            }
 
             _isPlaying = true;
             UpdateAudioUI(true);
-
             _audioSessionId++;
 
-            //  USE ANDROID TTS (same as service)
 #if ANDROID
             AndroidTtsService.Speak(SelectedPoi.Description);
 #endif
@@ -376,12 +385,14 @@ namespace MauiAppMain
         private void StopAudio()
         {
             _isPlaying = false;
-
-            //  STOP GLOBAL TTS
 #if ANDROID
             AndroidTtsService.Stop();
 #endif
-            UpdateAudioUI(false);
+
+            // Cập nhật lại UI trên luồng chính
+            MainThread.BeginInvokeOnMainThread(() => {
+                UpdateAudioUI(false);
+            });
         }
 
         private async void OnAudioToggleClicked(object sender, EventArgs e)
