@@ -316,7 +316,7 @@
                     _favorites.Remove(item);
                 }
 
-                await PoiSheet.TranslateTo(0, _sheetHiddenY, 150);
+                await PoiSheet.TranslateTo(0, _sheetHiddenY, 200, Easing.CubicOut);
             }
 
             private async void OnSheetPanUpdated(object sender, PanUpdatedEventArgs e)
@@ -343,21 +343,45 @@
                         PoiSheet.CancelAnimations();
 
                         double currentY = PoiSheet.TranslationY;
+                        double dragDelta = currentY - _startY; // Lấy gia tốc hướng kéo
 
-                        // 1. Nếu vuốt xuống quá thấp -> Ẩn luôn
-                        if (currentY > _sheetHalfY + 100)
+                        // Độ nhạy cao: kéo tay khoảng 40px là nhận định hướng muốn vuốt xuống hạy lên
+                        double swipeThreshold = 40;
+
+                        // 1. Nếu vuốt nhẹ xuống
+                        if (dragDelta > swipeThreshold)
                         {
-                            await HideBottomSheet();
+                            // Đang ở một nửa (hoặc thấp hơn) -> Ẩn luôn
+                            if (_startY >= _sheetHalfY - 20)
+                            {
+                                await HideBottomSheet();
+                            }
+                            // Đang mở Full trên cao -> Trở về dạng một nửa
+                            else
+                            {
+                                await PoiSheet.TranslateTo(0, _sheetHalfY, 250, Easing.CubicOut);
+                            }
                         }
-                        // 2. Nếu ở gần phía trên -> Snap lên Full
-                        else if (currentY < (_sheetFullY + _sheetHalfY) / 2)
+                        // 2. Nếu vuốt nhẹ lên trên
+                        else if (dragDelta < -swipeThreshold)
                         {
                             await PoiSheet.TranslateTo(0, _sheetFullY, 250, Easing.CubicOut);
                         }
-                        // 3. Còn lại -> Snap về giữa (Half)
+                        // 3. Fallback: Nếu tay chỉ chạm nhẹ và thả ra ngay (chưa qua được threshold)
                         else
                         {
-                            await PoiSheet.TranslateTo(0, _sheetHalfY, 250, Easing.CubicOut);
+                            if (currentY > _sheetHalfY + swipeThreshold)
+                            {
+                                await HideBottomSheet();
+                            }
+                            else if (currentY > (_sheetFullY + _sheetHalfY) / 2)
+                            {
+                                await PoiSheet.TranslateTo(0, _sheetHalfY, 250, Easing.CubicOut);
+                            }
+                            else
+                            {
+                                await PoiSheet.TranslateTo(0, _sheetFullY, 250, Easing.CubicOut);
+                            }
                         }
                         break;
                 }
