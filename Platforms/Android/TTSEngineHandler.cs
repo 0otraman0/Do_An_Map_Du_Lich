@@ -1,4 +1,4 @@
-﻿using Android.Icu.Util;
+using Android.Icu.Util;
 using global::Android.Content;
 using global::Android.Speech.Tts;
 using Java.Util;
@@ -24,14 +24,10 @@ namespace MauiAppMain
             tts.SetOnUtteranceProgressListener(new MyListener());
         }
 
-        public static void Speak(string text, bool flushQueue = false)
+        public static void Speak(string text, bool flushQueue = true)
         {
             // 1. Kiểm tra null ngay lập tức khi vào hàm
-            if (tts == null) return;
-
-            if (string.IsNullOrEmpty(text)) return;
-
-
+            if (tts == null || string.IsNullOrWhiteSpace(text)) return;
 
             // 2. Chặn lỗi khi tts chưa sẵn sàng lấy Voices
             try
@@ -45,21 +41,47 @@ namespace MauiAppMain
                     _ => Locale.Us
                 };
 
-                tts.SetLanguage(locale);
-
-                if (queueCount >= MAX_QUEUE && !flushQueue)
-                    return;
+                var result = tts.SetLanguage(locale);
+                if (result == LanguageAvailableResult.MissingData || result == LanguageAvailableResult.NotSupported)
+                {
+                    locale = new Locale(lang);
+                    tts.SetLanguage(locale);
+                }
 
                 if (flushQueue) queueCount = 0; // Nếu flush thì reset count
 
                 tts.SetPitch(1.0f);
                 tts.SetSpeechRate(0.8f);
 
-                queueCount++;
+                global::Android.OS.Bundle bundle = new global::Android.OS.Bundle();
+                bundle.PutInt(TextToSpeech.Engine.KeyParamStream, 3); // AudioManager.STREAM_MUSIC = 3
+                bundle.PutFloat(TextToSpeech.Engine.KeyParamVolume, 1.0f);
 
-                // Sử dụng ID duy nhất để Listener nhận diện được
-                string utteranceId = Guid.NewGuid().ToString();
-                tts.Speak(text, flushQueue ? QueueMode.Flush : QueueMode.Add, null, utteranceId);
+                int maxLen = TextToSpeech.MaxSpeechInputLength;
+                if (maxLen <= 0) maxLen = 3999;
+
+                var chunks = new System.Collections.Generic.List<string>();
+                int i = 0;
+                while (i < text.Length)
+                {
+                    int len = Math.Min(maxLen, text.Length - i);
+                    if (len < maxLen)
+                    {
+                        chunks.Add(text.Substring(i, len));
+                        break;
+                    }
+                    int lastSpace = text.LastIndexOfAny(new[] { ' ', '.', ',', '\n' }, i + len - 1, len);
+                    if (lastSpace > i) len = lastSpace - i + 1;
+                    chunks.Add(text.Substring(i, len));
+                    i += len;
+                }
+
+                for (int j = 0; j < chunks.Count; j++)
+                {
+                    queueCount++;
+                    string utteranceId = Guid.NewGuid().ToString();
+                    tts.Speak(chunks[j], (flushQueue && j == 0) ? QueueMode.Flush : QueueMode.Add, bundle, utteranceId);
+                }
             }
             catch (Exception ex)
             {
@@ -90,20 +112,27 @@ namespace MauiAppMain
             public override void OnDone(string utteranceId)
             {
                 queueCount--;
-                // Quan trọng: Phải chạy trên MainThread vì nó sẽ tác động đến giao diện
-                MainThread.BeginInvokeOnMainThread(() =>
+                if (queueCount <= 0)
                 {
-                    OnSpeechCompleted?.Invoke();
-                });
+                    queueCount = 0;
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        OnSpeechCompleted?.Invoke();
+                    });
+                }
             }
 
             public override void OnError(string utteranceId)
             {
                 queueCount--;
-                MainThread.BeginInvokeOnMainThread(() =>
+                if (queueCount <= 0)
                 {
-                    OnSpeechCompleted?.Invoke();
-                });
+                    queueCount = 0;
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        OnSpeechCompleted?.Invoke();
+                    });
+                }
             }
 
             public override void OnStart(string utteranceId) { }

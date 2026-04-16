@@ -158,27 +158,27 @@
                 <VerticalStackLayout x:Name="SinglePoiView" Spacing="5">
 
                     <Label x:Name="SingleTabTitleLabel" 
-       FontAttributes="Bold" 
-       TextColor="Gray"
-       FontSize="12" />
+                           FontAttributes="Bold" 
+                           TextColor="Gray"
+                           FontSize="12" />
                     
                     <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center" Margin="0,5">
                         <Label Text="{Binding SelectedPoi.Name}" 
-               FontSize="22" 
-               FontAttributes="Bold" 
-               TextColor="Black" 
-               VerticalOptions="Center"/>
+                               FontSize="22" 
+                               FontAttributes="Bold" 
+                               TextColor="Black" 
+                               VerticalOptions="Center"/>
 
                         <Button x:Name="SaveBtn" 
-                Grid.Column="1" 
-                BackgroundColor="#F0F0F0" 
-                TextColor="Black" 
-                CornerRadius="20" 
-                HeightRequest="40" 
-                Padding="15,0" 
-                FontSize="13" 
-                Clicked="OnSaveClicked" 
-                VerticalOptions="Center">
+                                Grid.Column="1" 
+                                BackgroundColor="#F0F0F0" 
+                                TextColor="Black" 
+                                CornerRadius="20" 
+                                HeightRequest="40" 
+                                Padding="15,0" 
+                                FontSize="13" 
+                                Clicked="OnSaveClicked" 
+                                VerticalOptions="Center">
                             <Button.ImageSource>
                                 <FontImageSource Glyph="🤍" Size="20" Color="Gray"/>
                             </Button.ImageSource>
@@ -186,9 +186,9 @@
                     </Grid>
 
                     <Label Text="{Binding SelectedPoi.Description}" 
-           FontSize="15" 
-           TextColor="#444444" 
-           Margin="0,0,0,10"/>
+                           FontSize="15" 
+                           TextColor="#444444" 
+                           Margin="0,0,0,10"/>
 
                     <Label Text="{Binding SelectedPoi.Address}" 
            FontSize="15" 
