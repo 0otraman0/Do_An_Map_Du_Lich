@@ -405,6 +405,8 @@
     #if ANDROID
                 AndroidTtsService.Speak(SelectedPoi.Description);
     #endif
+                
+                _ = PoiTrafficLogger.LogPoiPlayAsync(SelectedPoi);
                 return Task.CompletedTask;
             }
 

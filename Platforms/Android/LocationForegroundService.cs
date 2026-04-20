@@ -154,6 +154,7 @@ public class LocationForegroundService : Service
             try
             {
                 AndroidTtsService.Speak(poi.Description);
+                _ = PoiTrafficLogger.LogPoiPlayAsync(poi);
             }
             catch (Exception ex)
             {
