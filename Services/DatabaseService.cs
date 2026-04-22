@@ -83,7 +83,9 @@ namespace MauiAppMain.Services
             var lang = Preferences.Get("App_language", "en");
             Console.WriteLine("Current language: " + lang);
 
-            var pois = await _database!.Table<Poi>().ToListAsync();
+            var pois = await _database!.Table<Poi>()
+                .Where(p => !p.IsDeleted)
+                .ToListAsync();
             var translations = await _database.Table<PoiDescription>()
                 .Where(t => t.Language == lang)
                 .ToListAsync();
@@ -118,6 +120,7 @@ namespace MauiAppMain.Services
                     IsFavorite = p.IsFavorite,
                     priorityLevel = p.priorityLevel,
                     Address = t?.Address ?? "",
+                    RadiusMeters = p.RadiusMeters
                 });
             }
             // trar về theo thứ tự ưu tiên
@@ -326,7 +329,7 @@ namespace MauiAppMain.Services
             var poiIds = matchedDescriptions.Select(d => d.PoiId).ToList();
 
             var pois = await _database.Table<Poi>()
-                .Where(p => poiIds.Contains(p.Id))
+                .Where(p => poiIds.Contains(p.Id) && !p.IsDeleted)
                 .ToListAsync();
 
             var result = new List<PointOfInterest>();

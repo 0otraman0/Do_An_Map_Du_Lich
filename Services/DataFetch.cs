@@ -8,6 +8,8 @@ public class DataFetch
     private readonly DatabaseService _database;
     private readonly HttpClient _httpClient;
 
+    public event Action? OnDataUpdated;
+
     public DataFetch(IDeviceInfoService deviceInfoService, DatabaseService databaseService, HttpClient httpClient)
     {
         _deviceInfoService = deviceInfoService;
@@ -55,6 +57,7 @@ public class DataFetch
         if (result == null || !result.Updated)
         {
             Console.WriteLine("No new data");
+            OnDataUpdated?.Invoke();
             return;
         }
         var prettyJson = JsonSerializer.Serialize(result, new JsonSerializerOptions
@@ -89,15 +92,28 @@ public class DataFetch
         {
             Console.WriteLine("Language: " + item.Language + " - Code: " + item.Code);
         }
-        //  2. SAVE POIs
+        //  2. SAVE POIs AND HANDLE DELETIONS FROM POI LIST
         if (result.Pois != null)
         {
-            await _database.SavePoisAsync(result.Pois);
-        }
-        var pois = await _database.GetAllPoisAsync();
-        foreach (var item in pois)
-        {
-            Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id);
+            var activePois = new List<Poi>();
+            foreach (var poi in result.Pois)
+            {
+                if (poi.IsDeleted)
+                {
+                    // POI was marked as deleted by the backend. Delete locally.
+                    await _database.DeletePOIAsync(poi.Id);
+                    Console.WriteLine($"[DELETE SUCCESS] POI {poi.Id} removed from Local DB via IsDeleted flag");
+                }
+                else
+                {
+                    activePois.Add(poi);
+                }
+            }
+
+            if (activePois.Count > 0)
+            {
+                await _database.SavePoisAsync(activePois);
+            }
         }
         //  3. SAVE DESCRIPTIONS
         if (result.Descriptions != null)
@@ -152,6 +168,9 @@ public class DataFetch
             Preferences.Set("LastSyncTime", result.LastUpdated);
             Console.WriteLine("Last update: " + result.LastUpdated);
         }
+
+        // 6. NOTIFY UI
+        OnDataUpdated?.Invoke();
     }
 
     //hàm thêm ảnh
@@ -213,8 +232,44 @@ public class DataFetch
             Console.WriteLine("Device has low storage, requesting data with language filter: " + lang);
             return $"{baseUrl}?lastUpdated=0&lang={lang}&t={timestamp}";
         }
-        Console.WriteLine("Device has sufficient storage, requesting all data");
-        return $"{baseUrl}?lastUpdated=0&t={timestamp}";
+        Console.WriteLine("Device has sufficient storage, requesting incremental data from: " + LastUpdated);
+        return $"{baseUrl}?lastUpdated={LastUpdated}&t={timestamp}";
+    }
+
+    private PeriodicTimer? _autoSyncTimer;
+    private CancellationTokenSource? _autoSyncCts;
+
+    public void StartAutoSync()
+    {
+        StopAutoSync();
+        _autoSyncCts = new CancellationTokenSource();
+        // Rút ngắn thời gian quét xuống 5 giây để cập nhật gần như tức thì
+        _autoSyncTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (await _autoSyncTimer.WaitForNextTickAsync(_autoSyncCts.Token))
+                {
+                    await FetchData(false);
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AutoSync error: {ex.Message}");
+            }
+        }, _autoSyncCts.Token);
+    }
+
+    public void StopAutoSync()
+    {
+        _autoSyncCts?.Cancel();
+        _autoSyncCts?.Dispose();
+        _autoSyncTimer?.Dispose();
+        _autoSyncCts = null;
+        _autoSyncTimer = null;
     }
 }
 public class PoiApiResponse

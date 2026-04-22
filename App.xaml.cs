@@ -26,7 +26,10 @@ namespace MauiAppMain
             // Start heartbeat timer (guaranteed on startup)
             _heartbeatService.StartHeartbeatTimer(TimeSpan.FromSeconds(10));
 
-            // Perform background data fetch after the app has started
+            // Start POI auto-sync polling
+            dataFetch.StartAutoSync();
+
+            // Perform background data fetch immediately
             Task.Run(async () =>
             {
                 try
@@ -45,12 +48,14 @@ namespace MauiAppMain
         {
             base.OnSleep();
             _heartbeatService.StopHeartbeatTimer();
+            dataFetch.StopAutoSync();
         }
 
         protected override void OnResume()
         {
             base.OnResume();
             _heartbeatService.StartHeartbeatTimer(TimeSpan.FromSeconds(10));
+            dataFetch.StartAutoSync();
         }
     }
 }

@@ -78,12 +78,67 @@
 
                 LanguageService.LoadSavedLanguage();
 
+                // ĐĂNG KÝ SỰ KIỆN CẬP NHẬT DỮ LIỆU
+                _dataFetch.OnDataUpdated += () => {
+                    MainThread.BeginInvokeOnMainThread(async () => {
+                        await RefreshDataFromDb();
+                    });
+                };
+
     #if ANDROID
                 AndroidTtsService.OnSpeechCompleted = () =>
                 {
                     StopAudio();
                 };
     #endif
+            }
+
+            private async Task RefreshDataFromDb()
+            {
+                try 
+                {
+                    var list = await _database.GetPOIsAsync();
+                    
+                    // Cập nhật danh sách hiển thị
+                    _pois.Clear();
+                    _favorites.Clear();
+
+                    if (list != null)
+                    {
+                        foreach (var poi in list)
+                        {
+                            _pois.Add(poi); 
+                            if (poi.IsFavorite) _favorites.Add(poi); 
+                        }
+                    }
+
+                    // Cập nhật Bản đồ
+                    if (MyMap != null)
+                    {
+                        LoadPoisOnMap();
+                    }
+
+                    // Nếu đang xem chi tiết một POI, hãy cập nhật lại dữ liệu cho nó (trường hợp bị xóa hoặc đổi tên)
+                    if (SelectedPoi != null)
+                    {
+                        var updated = _pois.FirstOrDefault(p => p.Id == SelectedPoi.Id);
+                        if (updated == null)
+                        {
+                            // POI đã bị xóa
+                            await HideBottomSheet();
+                        }
+                        else
+                        {
+                            SelectedPoi = updated;
+                        }
+                    }
+                    
+                    FilterDisplayedPois(); // Cập nhật lại UI List
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("REFRESH DATA ERROR: " + ex.Message);
+                }
             }
 
             bool _isLoaded = false;
@@ -106,7 +161,13 @@
             {
                 base.OnAppearing();
 
-                if (_isLoaded) return;
+                if (_isLoaded)
+                {
+                    // Nếu quay lại từ trang cài đặt (hoặc nơi khác), cập nhật lại danh sách POI từ SQLite
+                    await RefreshDataFromDb();
+                    return;
+                }
+                
                 _isLoaded = true;
 
                 try 
@@ -135,25 +196,13 @@
 
                     // 2. Chờ cả 2 nhiệm vụ hoàn tất song song
                     await Task.WhenAll(permissionTask, dbTask);
-                    var list = await dbTask;
+                    
+                    // 3. Load dữ liệu lần đầu
+                    await RefreshDataFromDb();
 
-                    // 3. Xóa sạch dữ liệu cũ và nạp mới
-                    _pois.Clear();
-                    _favorites.Clear();
-
-                    if (list != null)
-                    {
-                        foreach (var poi in list)
-                        {
-                            _pois.Add(poi); 
-                            if (poi.IsFavorite) _favorites.Add(poi); 
-                        }
-                    }
-
-                    // 4. Bơm dữ liệu POI lên Map
+                    // 4. Di chuyển bản đồ đến điểm đầu tiên
                     if (_pois.Count > 0 && MyMap != null)
                     {
-                        LoadPoisOnMap();
                         var firstPoi = _pois[0];
                         MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
                             new Location(firstPoi.Latitude, firstPoi.Longitude),
@@ -219,20 +268,30 @@
             // ---------------- MAP ----------------
             void LoadPoisOnMap()
             {
-                MyMap.Pins.Clear();
-                _pinPoiMap.Clear();
-
-                foreach (var poi in _pois) // Dùng AllPois thay cho _pois
+                // Find pins that are no longer in _pois and remove them
+                var pinsToRemove = _pinPoiMap.Where(kvp => !_pois.Any(p => p.Id == kvp.Value.Id)).ToList();
+                foreach (var kvp in pinsToRemove)
                 {
-                    var pin = new Pin
+                    MyMap.Pins.Remove(kvp.Key);
+                    _pinPoiMap.Remove(kvp.Key);
+                }
+
+                // Find POIs that don't have a pin yet and add them
+                var existingPoiIds = _pinPoiMap.Values.Select(p => p.Id).ToList();
+                foreach (var poi in _pois) 
+                {
+                    if (!existingPoiIds.Contains(poi.Id))
                     {
-                        Label = poi.Name,
-                        Address = poi.Address, // Dùng Address cho chuẩn
-                        Location = new Location(poi.Latitude, poi.Longitude)
-                    };
-                    pin.MarkerClicked += OnPinClicked;
-                    MyMap.Pins.Add(pin);
-                    _pinPoiMap[pin] = poi;
+                        var pin = new Pin
+                        {
+                            Label = poi.Name,
+                            Address = poi.Address, 
+                            Location = new Location(poi.Latitude, poi.Longitude)
+                        };
+                        pin.MarkerClicked += OnPinClicked;
+                        MyMap.Pins.Add(pin);
+                        _pinPoiMap[pin] = poi;
+                    }
                 }
             }
 
