@@ -67,6 +67,8 @@ public class DataFetch
         Console.WriteLine("new data.");
         Console.WriteLine(prettyJson);
 
+        var deletedPoiIds = new HashSet<int>();
+
         // 1. DELETE
         if (result.DeletedIds != null && result.DeletedIds.Count > 0)
         {
@@ -75,6 +77,7 @@ public class DataFetch
                 if (int.TryParse(id, out int poiId))
                 {
                     await _database.DeletePOIAsync(poiId);
+                    deletedPoiIds.Add(poiId);
                     Console.WriteLine($"[DELETE SUCCESS] POI {poiId} removed from Local DB");
                 }
             }
@@ -98,10 +101,11 @@ public class DataFetch
             var activePois = new List<Poi>();
             foreach (var poi in result.Pois)
             {
-                if (poi.IsDeleted)
+                if (poi.IsDeleted || deletedPoiIds.Contains(poi.Id))
                 {
                     // POI was marked as deleted by the backend. Delete locally.
                     await _database.DeletePOIAsync(poi.Id);
+                    deletedPoiIds.Add(poi.Id);
                     Console.WriteLine($"[DELETE SUCCESS] POI {poi.Id} removed from Local DB via IsDeleted flag");
                 }
                 else
@@ -118,7 +122,11 @@ public class DataFetch
         //  3. SAVE DESCRIPTIONS
         if (result.Descriptions != null)
         {
-            await _database.SaveDescriptionsAsync(result.Descriptions);
+            var activeDescriptions = result.Descriptions.Where(d => !deletedPoiIds.Contains(d.PoiId)).ToList();
+            if (activeDescriptions.Count > 0)
+            {
+                await _database.SaveDescriptionsAsync(activeDescriptions);
+            }
         }
         var des = await _database.GetAllDescriptionsAsync();
         foreach (var item in des)
@@ -236,41 +244,6 @@ public class DataFetch
         return $"{baseUrl}?lastUpdated={LastUpdated}&t={timestamp}";
     }
 
-    private PeriodicTimer? _autoSyncTimer;
-    private CancellationTokenSource? _autoSyncCts;
-
-    public void StartAutoSync()
-    {
-        StopAutoSync();
-        _autoSyncCts = new CancellationTokenSource();
-        // Rút ngắn thời gian quét xuống 5 giây để cập nhật gần như tức thì
-        _autoSyncTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-        
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                while (await _autoSyncTimer.WaitForNextTickAsync(_autoSyncCts.Token))
-                {
-                    await FetchData(false);
-                }
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"AutoSync error: {ex.Message}");
-            }
-        }, _autoSyncCts.Token);
-    }
-
-    public void StopAutoSync()
-    {
-        _autoSyncCts?.Cancel();
-        _autoSyncCts?.Dispose();
-        _autoSyncTimer?.Dispose();
-        _autoSyncCts = null;
-        _autoSyncTimer = null;
-    }
 }
 public class PoiApiResponse
 {
@@ -295,4 +268,16 @@ public class PoiApiResponse
 
     [JsonPropertyName("images")]
     public Dictionary<string, List<string>> Images { get; set; } = new Dictionary<string, List<string>>();
+
+    // Dummy method để báo cho Linker (Trimmer) trong Release mode không được xóa các Setter này
+    public void PreserveForTrimmer()
+    {
+        Updated = true;
+        LastUpdated = 0;
+        Pois = new List<Poi>();
+        Languages = new List<Language_option>();
+        DeletedIds = new List<string>();
+        Descriptions = new List<PoiDescription>();
+        Images = new Dictionary<string, List<string>>();
+    }
 }

@@ -76,8 +76,6 @@
                 AllPoiListView.ItemsSource = _pois;
                 FavoritePoiListView.ItemsSource = _favorites;
 
-                LanguageService.LoadSavedLanguage();
-
                 // ĐĂNG KÝ SỰ KIỆN CẬP NHẬT DỮ LIỆU
                 _dataFetch.OnDataUpdated += () => {
                     MainThread.BeginInvokeOnMainThread(async () => {
@@ -172,35 +170,37 @@
 
                 try 
                 {
-                    // 0. BẬT BẢN ĐỒ NGAY LẬP TỨC
-                    //if (MyMap != null) MyMap.IsVisible = false;
+                    // 0. ẨN BẢN ĐỒ LÚC ĐANG TẢI ĐỂ TRÁNH HIỆN TỌA ĐỘ 0,0
+                    if (MyMap != null) MyMap.IsVisible = false;
 
-                    // 1. KÍCH HOẠT ĐA LUỒNG: Vừa xin quyền GPS, vừa chạy chìm lấy Gói Data
-                    // Note: Android 15 is strict about LocationAlways. Requesting WhenInUse first is safer.
                     // 1. Xin quyền GPS trước
                     var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 
-                    // 2. Load DB
-                    //var list = await Task.Run(async () => await _database.GetPOIsAsync());
-
-                    // 3. Xử lý UI và Bật bản đồ SAU KHI ĐÃ CÓ QUYỀN
+                    // 2. Xử lý quyền GPS
                     if (status == PermissionStatus.Granted)
                     {
-                        MyMap.IsShowingUser = true; // Giờ mới cho phép Map đọc GPS
+                        if (MyMap != null) MyMap.IsShowingUser = true;
                     }
-
-                    MyMap.IsVisible = true; // Giờ bật Map lên mới an toàn
-                    var permissionTask = Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 
                     var dbTask = Task.Run(async () => await _database.GetPOIsAsync());
 
-                    // 2. Chờ cả 2 nhiệm vụ hoàn tất song song
-                    await Task.WhenAll(permissionTask, dbTask);
+                    // 3. Chờ dbTask hoàn tất
+                    await dbTask;
                     
-                    // 3. Load dữ liệu lần đầu
+                    // 4. Gọi máy chủ AWS và CHỜ cho đến khi tải xong dữ liệu mới (Chặn màn hình)
+                    try
+                    {
+                        await _dataFetch.FetchData(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("STARTUP FETCH ERROR: " + ex.Message);
+                    }
+
+                    // 5. Load dữ liệu từ SQLite (đã được cập nhật) lên giao diện
                     await RefreshDataFromDb();
 
-                    // 4. Di chuyển bản đồ đến điểm đầu tiên
+                    // 6. Di chuyển bản đồ đến điểm đầu tiên
                     if (_pois.Count > 0 && MyMap != null)
                     {
                         var firstPoi = _pois[0];
@@ -208,6 +208,9 @@
                             new Location(firstPoi.Latitude, firstPoi.Longitude),
                             Distance.FromMeters(500)));
                     }
+
+                    // 7. HIỆN BẢN ĐỒ SAU KHI ĐÃ SẴN SÀNG VÀ CHUẨN TỌA ĐỘ
+                    if (MyMap != null) MyMap.IsVisible = true;
 
                     // --- HACK WARM UP NATIVE VIEWS ---
                     if (PoiListContainer != null) PoiListContainer.IsVisible = true;
