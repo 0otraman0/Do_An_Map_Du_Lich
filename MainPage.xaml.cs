@@ -76,7 +76,12 @@
                 AllPoiListView.ItemsSource = _pois;
                 FavoritePoiListView.ItemsSource = _favorites;
 
-                LanguageService.LoadSavedLanguage();
+                // ĐĂNG KÝ SỰ KIỆN CẬP NHẬT DỮ LIỆU
+                _dataFetch.OnDataUpdated += () => {
+                    MainThread.BeginInvokeOnMainThread(async () => {
+                        await RefreshDataFromDb();
+                    });
+                };
 
     #if ANDROID
                 AndroidTtsService.OnSpeechCompleted = () =>
@@ -84,6 +89,54 @@
                     StopAudio();
                 };
     #endif
+            }
+
+            private async Task RefreshDataFromDb()
+            {
+                try 
+                {
+                    var list = await _database.GetPOIsAsync();
+                    
+                    // Cập nhật danh sách hiển thị
+                    _pois.Clear();
+                    _favorites.Clear();
+
+                    if (list != null)
+                    {
+                        foreach (var poi in list)
+                        {
+                            _pois.Add(poi); 
+                            if (poi.IsFavorite) _favorites.Add(poi); 
+                        }
+                    }
+
+                    // Cập nhật Bản đồ
+                    if (MyMap != null)
+                    {
+                        LoadPoisOnMap();
+                    }
+
+                    // Nếu đang xem chi tiết một POI, hãy cập nhật lại dữ liệu cho nó (trường hợp bị xóa hoặc đổi tên)
+                    if (SelectedPoi != null)
+                    {
+                        var updated = _pois.FirstOrDefault(p => p.Id == SelectedPoi.Id);
+                        if (updated == null)
+                        {
+                            // POI đã bị xóa
+                            await HideBottomSheet();
+                        }
+                        else
+                        {
+                            SelectedPoi = updated;
+                        }
+                    }
+                    
+                    FilterDisplayedPois(); // Cập nhật lại UI List
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("REFRESH DATA ERROR: " + ex.Message);
+                }
             }
 
             bool _isLoaded = false;
@@ -106,59 +159,58 @@
             {
                 base.OnAppearing();
 
-                if (_isLoaded) return;
+                if (_isLoaded)
+                {
+                    // Nếu quay lại từ trang cài đặt (hoặc nơi khác), cập nhật lại danh sách POI từ SQLite
+                    await RefreshDataFromDb();
+                    return;
+                }
+                
                 _isLoaded = true;
 
                 try 
                 {
-                    // 0. BẬT BẢN ĐỒ NGAY LẬP TỨC
-                    //if (MyMap != null) MyMap.IsVisible = false;
+                    // 0. ẨN BẢN ĐỒ LÚC ĐANG TẢI ĐỂ TRÁNH HIỆN TỌA ĐỘ 0,0
+                    if (MyMap != null) MyMap.IsVisible = false;
 
-                    // 1. KÍCH HOẠT ĐA LUỒNG: Vừa xin quyền GPS, vừa chạy chìm lấy Gói Data
-                    // Note: Android 15 is strict about LocationAlways. Requesting WhenInUse first is safer.
                     // 1. Xin quyền GPS trước
                     var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 
-                    // 2. Load DB
-                    //var list = await Task.Run(async () => await _database.GetPOIsAsync());
-
-                    // 3. Xử lý UI và Bật bản đồ SAU KHI ĐÃ CÓ QUYỀN
+                    // 2. Xử lý quyền GPS
                     if (status == PermissionStatus.Granted)
                     {
-                        MyMap.IsShowingUser = true; // Giờ mới cho phép Map đọc GPS
+                        if (MyMap != null) MyMap.IsShowingUser = true;
                     }
-
-                    MyMap.IsVisible = true; // Giờ bật Map lên mới an toàn
-                    var permissionTask = Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 
                     var dbTask = Task.Run(async () => await _database.GetPOIsAsync());
 
-                    // 2. Chờ cả 2 nhiệm vụ hoàn tất song song
-                    await Task.WhenAll(permissionTask, dbTask);
-                    var list = await dbTask;
-
-                    // 3. Xóa sạch dữ liệu cũ và nạp mới
-                    _pois.Clear();
-                    _favorites.Clear();
-
-                    if (list != null)
+                    // 3. Chờ dbTask hoàn tất
+                    await dbTask;
+                    
+                    // 4. Gọi máy chủ AWS và CHỜ cho đến khi tải xong dữ liệu mới (Chặn màn hình)
+                    try
                     {
-                        foreach (var poi in list)
-                        {
-                            _pois.Add(poi); 
-                            if (poi.IsFavorite) _favorites.Add(poi); 
-                        }
+                        await _dataFetch.FetchData(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("STARTUP FETCH ERROR: " + ex.Message);
                     }
 
-                    // 4. Bơm dữ liệu POI lên Map
+                    // 5. Load dữ liệu từ SQLite (đã được cập nhật) lên giao diện
+                    await RefreshDataFromDb();
+
+                    // 6. Di chuyển bản đồ đến điểm đầu tiên
                     if (_pois.Count > 0 && MyMap != null)
                     {
-                        LoadPoisOnMap();
                         var firstPoi = _pois[0];
                         MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(
                             new Location(firstPoi.Latitude, firstPoi.Longitude),
                             Distance.FromMeters(500)));
                     }
+
+                    // 7. HIỆN BẢN ĐỒ SAU KHI ĐÃ SẴN SÀNG VÀ CHUẨN TỌA ĐỘ
+                    if (MyMap != null) MyMap.IsVisible = true;
 
                     // --- HACK WARM UP NATIVE VIEWS ---
                     if (PoiListContainer != null) PoiListContainer.IsVisible = true;
@@ -219,20 +271,30 @@
             // ---------------- MAP ----------------
             void LoadPoisOnMap()
             {
-                MyMap.Pins.Clear();
-                _pinPoiMap.Clear();
-
-                foreach (var poi in _pois) // Dùng AllPois thay cho _pois
+                // Find pins that are no longer in _pois and remove them
+                var pinsToRemove = _pinPoiMap.Where(kvp => !_pois.Any(p => p.Id == kvp.Value.Id)).ToList();
+                foreach (var kvp in pinsToRemove)
                 {
-                    var pin = new Pin
+                    MyMap.Pins.Remove(kvp.Key);
+                    _pinPoiMap.Remove(kvp.Key);
+                }
+
+                // Find POIs that don't have a pin yet and add them
+                var existingPoiIds = _pinPoiMap.Values.Select(p => p.Id).ToList();
+                foreach (var poi in _pois) 
+                {
+                    if (!existingPoiIds.Contains(poi.Id))
                     {
-                        Label = poi.Name,
-                        Address = poi.Address, // Dùng Address cho chuẩn
-                        Location = new Location(poi.Latitude, poi.Longitude)
-                    };
-                    pin.MarkerClicked += OnPinClicked;
-                    MyMap.Pins.Add(pin);
-                    _pinPoiMap[pin] = poi;
+                        var pin = new Pin
+                        {
+                            Label = poi.Name,
+                            Address = poi.Address, 
+                            Location = new Location(poi.Latitude, poi.Longitude)
+                        };
+                        pin.MarkerClicked += OnPinClicked;
+                        MyMap.Pins.Add(pin);
+                        _pinPoiMap[pin] = poi;
+                    }
                 }
             }
 

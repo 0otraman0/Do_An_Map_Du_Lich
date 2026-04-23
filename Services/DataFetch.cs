@@ -8,6 +8,8 @@ public class DataFetch
     private readonly DatabaseService _database;
     private readonly HttpClient _httpClient;
 
+    public event Action? OnDataUpdated;
+
     public DataFetch(IDeviceInfoService deviceInfoService, DatabaseService databaseService, HttpClient httpClient)
     {
         _deviceInfoService = deviceInfoService;
@@ -55,6 +57,7 @@ public class DataFetch
         if (result == null || !result.Updated)
         {
             Console.WriteLine("No new data");
+            OnDataUpdated?.Invoke();
             return;
         }
         var prettyJson = JsonSerializer.Serialize(result, new JsonSerializerOptions
@@ -64,6 +67,8 @@ public class DataFetch
         Console.WriteLine("new data.");
         Console.WriteLine(prettyJson);
 
+        var deletedPoiIds = new HashSet<int>();
+
         // 1. DELETE
         if (result.DeletedIds != null && result.DeletedIds.Count > 0)
         {
@@ -72,6 +77,7 @@ public class DataFetch
                 if (int.TryParse(id, out int poiId))
                 {
                     await _database.DeletePOIAsync(poiId);
+                    deletedPoiIds.Add(poiId);
                     Console.WriteLine($"[DELETE SUCCESS] POI {poiId} removed from Local DB");
                 }
             }
@@ -89,20 +95,38 @@ public class DataFetch
         {
             Console.WriteLine("Language: " + item.Language + " - Code: " + item.Code);
         }
-        //  2. SAVE POIs
+        //  2. SAVE POIs AND HANDLE DELETIONS FROM POI LIST
         if (result.Pois != null)
         {
-            await _database.SavePoisAsync(result.Pois);
-        }
-        var pois = await _database.GetAllPoisAsync();
-        foreach (var item in pois)
-        {
-            Console.WriteLine("POI: " + item.Latitude + " - Id: " + item.Id);
+            var activePois = new List<Poi>();
+            foreach (var poi in result.Pois)
+            {
+                if (poi.IsDeleted || deletedPoiIds.Contains(poi.Id))
+                {
+                    // POI was marked as deleted by the backend. Delete locally.
+                    await _database.DeletePOIAsync(poi.Id);
+                    deletedPoiIds.Add(poi.Id);
+                    Console.WriteLine($"[DELETE SUCCESS] POI {poi.Id} removed from Local DB via IsDeleted flag");
+                }
+                else
+                {
+                    activePois.Add(poi);
+                }
+            }
+
+            if (activePois.Count > 0)
+            {
+                await _database.SavePoisAsync(activePois);
+            }
         }
         //  3. SAVE DESCRIPTIONS
         if (result.Descriptions != null)
         {
-            await _database.SaveDescriptionsAsync(result.Descriptions);
+            var activeDescriptions = result.Descriptions.Where(d => !deletedPoiIds.Contains(d.PoiId)).ToList();
+            if (activeDescriptions.Count > 0)
+            {
+                await _database.SaveDescriptionsAsync(activeDescriptions);
+            }
         }
         var des = await _database.GetAllDescriptionsAsync();
         foreach (var item in des)
@@ -152,6 +176,9 @@ public class DataFetch
             Preferences.Set("LastSyncTime", result.LastUpdated);
             Console.WriteLine("Last update: " + result.LastUpdated);
         }
+
+        // 6. NOTIFY UI
+        OnDataUpdated?.Invoke();
     }
 
     //hàm thêm ảnh
@@ -213,9 +240,10 @@ public class DataFetch
             Console.WriteLine("Device has low storage, requesting data with language filter: " + lang);
             return $"{baseUrl}?lastUpdated=0&lang={lang}&t={timestamp}";
         }
-        Console.WriteLine("Device has sufficient storage, requesting all data");
-        return $"{baseUrl}?lastUpdated=0&t={timestamp}";
+        Console.WriteLine("Device has sufficient storage, requesting incremental data from: " + LastUpdated);
+        return $"{baseUrl}?lastUpdated={LastUpdated}&t={timestamp}";
     }
+
 }
 public class PoiApiResponse
 {
@@ -240,4 +268,16 @@ public class PoiApiResponse
 
     [JsonPropertyName("images")]
     public Dictionary<string, List<string>> Images { get; set; } = new Dictionary<string, List<string>>();
+
+    // Dummy method để báo cho Linker (Trimmer) trong Release mode không được xóa các Setter này
+    public void PreserveForTrimmer()
+    {
+        Updated = true;
+        LastUpdated = 0;
+        Pois = new List<Poi>();
+        Languages = new List<Language_option>();
+        DeletedIds = new List<string>();
+        Descriptions = new List<PoiDescription>();
+        Images = new Dictionary<string, List<string>>();
+    }
 }
