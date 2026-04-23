@@ -94,25 +94,28 @@ public class LocationForegroundService : Service
                         _lastHeartbeatTime = DateTime.Now;
                     }
 
-                    foreach (var poi in _pois)
+                    if (!AndroidTtsService.IsSpeaking)
                     {
-                        double distance = location.CalculateDistance(
-                            new Location(poi.Latitude, poi.Longitude),
-                            DistanceUnits.Kilometers);
-
-                        double meters = distance * 1000;
-
-                        if (meters < poi.RadiusMeters)
+                        foreach (var poi in _pois)
                         {
-                            if (_poiLastSpoken.TryGetValue(poi.Id, out var lastSpoken))
-                            {
-                                if ((DateTime.Now - lastSpoken).TotalMinutes < 1)
-                                    continue; // skip recently spoken POIs
-                            }
+                            double distance = location.CalculateDistance(
+                                new Location(poi.Latitude, poi.Longitude),
+                                DistanceUnits.Kilometers);
 
-                            _poiLastSpoken[poi.Id] = DateTime.Now;
-                            _ = SpeakPoiDescription(poi);
-                            break; // only speak one per loop
+                            double meters = distance * 1000;
+
+                            if (meters < poi.RadiusMeters)
+                            {
+                                if (_poiLastSpoken.TryGetValue(poi.Id, out var lastSpoken))
+                                {
+                                    if ((DateTime.Now - lastSpoken).TotalMinutes < 1)
+                                        continue; // skip recently spoken POIs
+                                }
+
+                                _poiLastSpoken[poi.Id] = DateTime.Now;
+                                _ = SpeakPoiDescription(poi);
+                                break; // only speak one per loop
+                            }
                         }
                     }
                 }

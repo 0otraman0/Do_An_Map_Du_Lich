@@ -13,6 +13,7 @@ namespace MauiAppMain
         public static Action? OnSpeechCompleted;
         static TextToSpeech? tts;
         static int queueCount = 0;
+        public static bool IsSpeaking => queueCount > 0;
         const int MAX_QUEUE = 3;
 
         public static void Init(Context context)
